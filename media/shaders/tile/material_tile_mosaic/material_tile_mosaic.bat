@@ -1,0 +1,1 @@
+glslangvalidator -V material_tile_mosaic.frag -o material_tile_mosaic.frag.spv

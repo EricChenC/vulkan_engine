@@ -1,0 +1,1 @@
+glslangvalidator -V material_wood_proc.frag -o material_wood_proc.frag.spv

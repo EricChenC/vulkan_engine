@@ -1,0 +1,1 @@
+glslangvalidator -V material_glass.frag -o material_glass.frag.spv

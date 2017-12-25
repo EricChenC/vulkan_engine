@@ -1,0 +1,1 @@
+glslangvalidator -V material_wall_paint_rolling.frag -o material_wall_paint_rolling.frag.spv

@@ -1,0 +1,12 @@
+<params>
+ <string value="Basic" name="MaterialType"/>
+ <float value="0.1" name="reflectivity"/>
+ <float value="0.0" name="extinction"/>
+ <float value="1.0" name="opacity"/>
+ 
+ <int value="1" name="options"/>
+ <int value="1" name="version"/>
+ 
+ <color value="0.650,0.313,0.000" name="glassColor"/>
+ <float value="0.6" name="albedo"/>
+</params>

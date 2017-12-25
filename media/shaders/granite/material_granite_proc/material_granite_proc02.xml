@@ -1,0 +1,21 @@
+<params>
+ <string value="Basic" name="MaterialType"/>
+ <color value="0.725,0.725,0.725" name="specularColor"/>
+ 
+ <float value="0.5" name="diffuseRough"/>
+ <float value="50" name="shininess"/>
+ <float value="0.2" name="reflectivity"/>
+ 
+ <float value="99" name="particleSize"/>
+ <float value="0.4" name="micaPercentage"/>
+ <float value="0.5" name="quarPercentage"/>
+ <float value="0.0" name="extinction"/>
+ <float value="1.0" name="opacity"/>
+ 
+ <int value="1" name="options"/>
+ <int value="1" name="version"/>
+ 
+ <color value="0.16,0.08,0.06" name="micaColor"/>
+ <color value="0.415,0.11,0.06" name="quarColor"/>
+ <color value="0.88,0.56,0.50" name="feldsparColor"/>
+</params>

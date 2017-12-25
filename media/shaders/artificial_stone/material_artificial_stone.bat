@@ -1,0 +1,1 @@
+glslangvalidator -V material_artificial_stone.frag -o material_artificial_stone.frag.spv

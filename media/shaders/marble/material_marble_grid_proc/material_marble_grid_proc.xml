@@ -1,0 +1,27 @@
+<params>
+ <string value="Basic" name="MaterialType"/>
+ <color value="0.368,0.368,0.368" name="specularColor"/>
+ 
+ <float value="0.5" name="diffuseRough"/>
+ <float value="0.2" name="reflectivity"/>
+ <float value="0.0" name="extinction"/>
+ <float value="1.0" name="opacity"/>
+ 
+ <int value="1" name="options"/>
+ <int value="1" name="version"/>
+ 
+ <color value="0.972,0.972,0.972" name="marbleColor01"/>
+ <color value="0.000,0.000,0.000" name="marbleColor02"/>
+ <color value="1.000,1.000,1.000" name="marbleColor11"/>
+ <color value="0.713,0.549,0.262" name="marbleColor12"/>
+ <color value="0.329,0.180,0.000" name="gapColor"/>
+ <color value="1.000,0.768,0.000" name="gapSpecular"/>
+ 
+ <float value="1.0" name="sizeScale"/>
+ <float value="0.5" name="tileWidth"/>
+ <float value="0.5" name="tileHeight"/>
+ <float value="0.5" name="tileThick"/>
+ <float value="0.01" name="gapWidth"/>
+ <float value="50.0" name="marbleShininess"/>
+ <float value="99.0" name="gapShininess"/>
+</params>

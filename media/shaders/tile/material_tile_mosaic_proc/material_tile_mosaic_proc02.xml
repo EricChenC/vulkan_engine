@@ -1,0 +1,21 @@
+<params>
+ <string value="Basic" name="MaterialType"/>
+ <int value="1" name="options"/>
+ <int value="1" name="version"/>
+ 
+ <color value="0.537,0.800,1.000" name="tileColor1"/>
+ <color value="0.192,0.533,0.921" name="tileColor2"/>
+ <color value="0.137,0.313,0.694" name="tileColor3"/>
+ <color value="0.992,0.992,0.992" name="mortarColor"/>
+ <color value="0.764,0.764,0.764" name="tileSpecular"/>
+ 
+ <float value="0.02" name="tileWidth"/>
+ <float value="0.02" name="tileHeight"/>
+ <float value="0.00" name="oddRowOffset"/>
+ <float value="0.004" name="mortarSize"/>
+ <float value="0.5" name="tilePercentage1"/>
+ <float value="0.34" name="tilePercentage2"/>
+ <float value="60.0" name="tileShininess"/>
+ <float value="0.10" name="tileReflectivity"/>
+ <float value="0.89" name="tileDiffRough"/>
+</params>

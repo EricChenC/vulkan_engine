@@ -1,0 +1,36 @@
+Appearance
+
+-- Generic:
+Color		-->			diffuseColor
+Image		-->			diffuseTexture
+
+
+-- Transparency:
+Image 		-->			specularTexture
+
+
+--Cutouts:
+Image		-->			cutOffTexture
+
+
+--Self Illumination:
+Filter Color -->		ambientColor
+
+
+--Bump:
+Image		-->			bumpTexture
+
+
+--Tint:
+Tint Color	-->			tintColor
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,1 @@
+glslangvalidator -V material_wall_paper.frag -o material_wall_paper.frag.spv

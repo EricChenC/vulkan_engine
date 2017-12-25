@@ -1,0 +1,15 @@
+<params>
+ <string value="Basic" name="MaterialType"/>
+ <float value="0.1" name="reflectivity"/>
+ <float value="1.4" name="indexOfRefraction"/>
+ <float value="0.0" name="extinction"/>
+ <float value="1.0" name="opacity"/>
+ 
+ <int value="1" name="options"/>
+ <int value="2" name="version"/>
+ 
+ <color value="0.060,0.150,0.190" name="glassColor"/>
+ <float value="0.019" name="thickness"/>
+ <float value="4" name="bumpSize"/>
+ <float value="1" name="bumpScale"/>
+</params>

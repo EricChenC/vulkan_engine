@@ -1,0 +1,1 @@
+glslangvalidator -V material_plastic.frag -o material_plastic.frag.spv

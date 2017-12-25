@@ -1,0 +1,1 @@
+glslangvalidator -V material_glass_bump_proc.frag -o material_glass_bump_proc.frag.spv

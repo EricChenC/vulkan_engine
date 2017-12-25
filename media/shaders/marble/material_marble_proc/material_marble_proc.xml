@@ -1,0 +1,18 @@
+<params>
+ <string value="Basic" name="MaterialType"/>
+ <color value="0.835,0.835,0.835" name="specularColor"/>
+ 
+ <float value="0.5" name="diffuseRough"/>
+ <float value="50" name="shininess"/>
+ <float value="0.2" name="reflectivity"/>
+ <float value="0.0" name="extinction"/>
+ <float value="1.0" name="opacity"/>
+ 
+ <int value="1" name="options"/>
+ <int value="1" name="version"/>
+ 
+ <color value="0.976,0.976,0.976" name="marbleColor1"/>
+ <color value="0.545,0.411,0.223" name="marbleColor2"/>
+ 
+ <float value="2.0" name="sizeScale"/>
+</params>

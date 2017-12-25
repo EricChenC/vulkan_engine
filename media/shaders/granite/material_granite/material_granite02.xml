@@ -1,0 +1,53 @@
+<params>
+ <string value="Basic" name="MaterialType"/>
+ <color value="0.860,0.860,0.860" name="diffuseColor"/>
+ <color value="0.580,0.580,0.580" name="specularColor"/>
+ <color value="0.000,0.000,0.000" name="transparency"/>
+ 
+ <float value="0.5" name="diffuseRough"/>
+ <float value="40" name="shininess"/>
+ <float value="0.1" name="reflectivity"/>
+ <float value="1.4" name="indexOfRefraction"/>
+ <float value="0.0" name="extinction"/>
+ <float value="1.0" name="opacity"/>
+ 
+ <int value="1" name="options"/>
+ <int value="2" name="version"/>
+ 
+ <texture name="diffuseTexture">
+   <string value="../Data/textures/granite02-degamma.png" name="file"/>
+   <wrap y="Repeat" x="Repeat"/>
+   <filter y="Linear" x="Linear"/>
+   <float2 value="0.000000,0.000000" name="offset"/>
+   <float2 value="1.000000,1.000000" name="repeat"/>
+   <float value="0" name="rotation"/>
+   <float value="0" name="anisotropy"/>
+   <float value="1" name="scale"/>
+   <boolean value="true" name="degamma"/>
+  </texture>
+  
+  <texture name="specularTexture">
+   <string value="../Data/textures/granite-specular02.png" name="file"/>
+   <wrap y="Repeat" x="Repeat"/>
+   <filter y="Linear" x="Linear"/>
+   <float2 value="0.000000,0.000000" name="offset"/>
+   <float2 value="1.000000,1.000000" name="repeat"/>
+   <float value="0" name="rotation"/>
+   <float value="0" name="anisotropy"/>
+   <float value="1" name="scale"/>
+   <boolean value="true" name="degamma"/>
+  </texture>
+  
+  <texture name="bumpTexture">
+   <string value="../Data/textures/granite-specular02-normal.png" name="file"/>
+   <wrap y="Repeat" x="Repeat"/>
+   <filter y="Linear" x="Linear"/>
+   <float2 value="0.000000,0.000000" name="offset"/>
+   <float2 value="1.000000,1.000000" name="repeat"/>
+   <float value="0" name="rotation"/>
+   <float value="0" name="anisotropy"/>
+   <float value="1" name="scale"/>
+   <boolean value="true" name="degamma"/>
+  </texture>
+  
+</params>

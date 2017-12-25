@@ -1,0 +1,1 @@
+glslangvalidator -V material_paint_multilayer.frag -o material_paint_multilayer.frag.spv

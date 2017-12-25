@@ -1,0 +1,28 @@
+<params>
+ <string value="Basic" name="MaterialType"/>
+ <color value="1.000,1.000,1.000" name="diffuseColor"/>
+ <color value="1.000,1.000,1.000" name="specularColor"/>
+ 
+ <float value="0.5" name="diffuseRough"/>
+ <float value="80" name="shininess"/>
+ <float value="0.1" name="reflectivity"/>
+ <float value="1.4" name="indexOfRefraction"/>
+ <float value="0.0" name="extinction"/>
+ <float value="1.0" name="opacity"/>
+ 
+ <int value="1" name="options"/>
+ <int value="1" name="version"/>
+ 
+ <texture name="diffuseTexture">
+   <string value="../Data/textures/granite.png" name="file"/>
+   <wrap y="Repeat" x="Repeat"/>
+   <filter y="Linear" x="Linear"/>
+   <float2 value="0.000000,0.000000" name="offset"/>
+   <float2 value="1.000000,1.000000" name="repeat"/>
+   <float value="0" name="rotation"/>
+   <float value="0" name="anisotropy"/>
+   <float value="1" name="scale"/>
+   <boolean value="true" name="degamma"/>
+  </texture>
+  
+</params>

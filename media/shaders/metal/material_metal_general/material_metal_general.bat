@@ -1,0 +1,1 @@
+glslangvalidator -V material_metal_general.frag -o material_metal_general.frag.spv
