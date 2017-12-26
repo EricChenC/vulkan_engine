@@ -49,7 +49,6 @@ namespace ve {
         void CreateTextureView(VkImageView& view, VkImage& texture);
         void CreateTextureSampler(VkSampler& sampler);
 
-
     private:
         VkDevice logic_device_;
 
