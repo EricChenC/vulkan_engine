@@ -27,6 +27,8 @@
 #include "vobject.h"
 #include "vscene.h"
 
+#include "vulkan/vulkan.hpp"
+
 namespace ve {
     class VEngine : public ve::VObject
     {

@@ -17,6 +17,14 @@ ${DEPS}/glfw/lib
 ${DEPS}/vulkan/lib
 )
 
+FIND_PACKAGE(Qt5Core  REQUIRED)
+
+FIND_PACKAGE(Qt5OpenGL)
+FIND_PACKAGE(Qt5Xml)
+FIND_PACKAGE(Qt5Network)
+
+FIND_PACKAGE(Qt5Widgets)
+
 file(GLOB SOURCE ./*.*)
 add_executable(vulkan_engine ${SOURCE})
 
