@@ -98,6 +98,24 @@ namespace ve {
 
         void RecreateBufer();
 
+
+        /* shadow */
+        void CreateShadowFrameBuffer();
+        void CreateShadowRenderPass();
+        void CreateShadowLayout();
+        void CreateShadowVertexBuffer();
+        void CreateShadowIndexBuffer();
+        void CreateShadowUniformBuffer();
+        void CreateShadowDescriptorPool();
+        void CreateShadowDescriptorSet();
+        void CreateShadowPipeline();
+        void CreateShadowCommandBuffer();
+
+        void UpdateShadowUniformBuffer();
+
+
+
+
     public:
         struct UniformMatrixBufferObject {
             glm::mat4 view;
@@ -169,6 +187,41 @@ namespace ve {
             std::vector<VkSurfaceFormatKHR> formats;
             std::vector<VkPresentModeKHR> presentModes;
         };
+
+
+        struct ShadowUBO {
+            glm::mat4 depthMVP;
+        };
+
+        struct ShadowVertex {
+            glm::vec3 pos;
+
+            static VkVertexInputBindingDescription getBindingDescription() {
+                VkVertexInputBindingDescription bindingDescription = {};
+                bindingDescription.binding = 0;
+                bindingDescription.stride = sizeof(ShadowVertex);
+                bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+                return bindingDescription;
+            }
+
+            static std::array<VkVertexInputAttributeDescription, 1> getAttributeDescriptions() {
+                std::array<VkVertexInputAttributeDescription, 1> attributeDescriptions = {};
+
+                attributeDescriptions[0].binding = 0;
+                attributeDescriptions[0].location = 0;
+                attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+                attributeDescriptions[0].offset = offsetof(ShadowVertex, pos);
+               
+                return attributeDescriptions;
+            }
+
+            bool operator==(const ShadowVertex& other) const {
+                return pos == other.pos;
+            }
+        };
+
+
 
         struct Vertex {
             glm::vec3 pos;
@@ -334,6 +387,47 @@ namespace ve {
         };
 
         std::vector<TextureInfo> texture_infos_;
+
+
+        /* shadow */
+        uint32_t shadow_width = 2048;
+        uint32_t shadow_height = 2048;
+
+        VkFramebuffer shadowFramebuffers;
+        VkRenderPass shadowRenderPass;
+        VkImage shadowImage;
+        VkDeviceMemory shadowImageMemory;
+        VkImageView shadowImageView;
+        VkSampler shadowImageSampler;
+
+        VkSemaphore shadowSemaphore;
+
+        VkPipeline shadowPipeline;
+        VkPipelineLayout shadowPipelineLayout;
+
+        VkCommandBuffer shadowCommandbuffer;
+        
+        VkDescriptorPool shadowDescriptorPool;
+        VkDescriptorSet shadowDescriptorSet;
+        VkDescriptorSetLayout shadowDescriptorSetLayout;
+
+
+        VkBuffer shadowVertexBuffer;
+        VkDeviceMemory shadowVertexBufferMemory;
+
+
+
+        VkBuffer shadowIndexBuffer;
+        VkDeviceMemory shadowIndexBufferMemory;
+        VkBuffer shadowUniformBuffer;
+        VkDeviceMemory shadowUniformBufferMemory;
+
+
+
+
+
+
+
 
     private:
         const std::vector<const char*> validationLayers = {
