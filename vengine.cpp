@@ -257,6 +257,9 @@ namespace ve {
         createDescriptorPool();
         createDescriptorSet();
 
+        createCommandBuffers();
+        ConstructCommandBuffers();
+
         CreateShadowVertexBuffer();
         CreateShadowIndexBuffer();
         CreateShadowUniformBuffer();
@@ -265,9 +268,6 @@ namespace ve {
 
         CreateShadowPipeline();
         CreateShadowCommandBuffer();
-
-        createCommandBuffers();
-        ConstructCommandBuffers();
         
         createSemaphores();
     }
@@ -1960,6 +1960,7 @@ namespace ve {
         descriptorWrites[0].descriptorCount = 1;
         descriptorWrites[0].pBufferInfo = &matrixBufferInfo;
 
+
         vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
     }
 
@@ -2029,15 +2030,9 @@ namespace ve {
         depthStencil.depthBoundsTestEnable = VK_FALSE;
         depthStencil.stencilTestEnable = VK_FALSE;
 
-        VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
-        colorBlendAttachment.colorWriteMask = 0xf;
-        colorBlendAttachment.blendEnable = VK_FALSE;
-
-
         VkPipelineColorBlendStateCreateInfo colorBlending = {};
         colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-        colorBlending.attachmentCount = 1;
-        colorBlending.pAttachments = &colorBlendAttachment;
+        colorBlending.attachmentCount = 0;
 
         std::vector<VkDynamicState> dynamicStateEnables = {
             VK_DYNAMIC_STATE_VIEWPORT,
@@ -2049,17 +2044,6 @@ namespace ve {
         dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
         dynamicState.dynamicStateCount = dynamicStateEnables.size();
         dynamicState.pDynamicStates = dynamicStateEnables.data();
-
-
-        VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
-        pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutInfo.setLayoutCount = 1;
-        pipelineLayoutInfo.pSetLayouts = &shadowDescriptorSetLayout;
-        
-
-        if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &shadowPipelineLayout) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create pipeline layout!");
-        }
 
         VkGraphicsPipelineCreateInfo pipelineInfo = {};
         pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -2074,8 +2058,6 @@ namespace ve {
         pipelineInfo.pColorBlendState = &colorBlending;
         pipelineInfo.layout = shadowPipelineLayout;
         pipelineInfo.renderPass = shadowRenderPass;
-        pipelineInfo.subpass = 0;
-        pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
         pipelineInfo.pDynamicState = &dynamicState;
 
 
