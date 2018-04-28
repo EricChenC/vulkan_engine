@@ -630,9 +630,17 @@ namespace ve {
         cutoffSamplerLayoutBinding.pImmutableSamplers = nullptr;
         cutoffSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-        std::array<VkDescriptorSetLayoutBinding, 9> bindings = {
+        VkDescriptorSetLayoutBinding shadowMapSamplerLayoutBinding = {};
+        shadowMapSamplerLayoutBinding.binding = 9;
+        shadowMapSamplerLayoutBinding.descriptorCount = 1;
+        shadowMapSamplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        shadowMapSamplerLayoutBinding.pImmutableSamplers = nullptr;
+        shadowMapSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+        std::array<VkDescriptorSetLayoutBinding, 10> bindings = {
             uboLayoutBinding, usvLayoutBinding, usfLayoutBinding, specialLayoutBinding, specialTextureLayoutBinding,
-            samplerLayoutBinding, specularSamplerLayoutBinding, bumpSamplerLayoutBinding, cutoffSamplerLayoutBinding };
+            samplerLayoutBinding, specularSamplerLayoutBinding, bumpSamplerLayoutBinding, cutoffSamplerLayoutBinding,
+            shadowMapSamplerLayoutBinding};
 
         VkDescriptorSetLayoutCreateInfo layoutInfo = {};
         layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -1278,7 +1286,13 @@ namespace ve {
         cutoffTextureInfo.imageView = cutoffTextureView;
         cutoffTextureInfo.sampler = cutoffTextureSampler;
 
-        std::array<VkWriteDescriptorSet, 9> descriptorWrites = {};
+        VkDescriptorImageInfo shadowMapTextureInfo = {};
+        shadowMapTextureInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        shadowMapTextureInfo.imageView = shadowImageView;
+        shadowMapTextureInfo.sampler = shadowImageSampler;
+
+
+        std::array<VkWriteDescriptorSet, 10> descriptorWrites = {};
 
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[0].dstSet = descriptorSet;
@@ -1351,6 +1365,14 @@ namespace ve {
         descriptorWrites[8].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         descriptorWrites[8].descriptorCount = 1;
         descriptorWrites[8].pImageInfo = &cutoffTextureInfo;
+
+        descriptorWrites[9].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[9].dstSet = descriptorSet;
+        descriptorWrites[9].dstBinding = 9;
+        descriptorWrites[9].dstArrayElement = 0;
+        descriptorWrites[9].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[9].descriptorCount = 1;
+        descriptorWrites[9].pImageInfo = &shadowMapTextureInfo;
 
         vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
     }
@@ -1463,6 +1485,13 @@ namespace ve {
     }
 
     void VEngine::updateUniformBuffer() {
+        // Matrix from light's point of view
+        glm::mat4 depthProjectionMatrix = glm::perspective(glm::radians(45.0f), 1.0f, 0.001f, 1000.0f);
+        glm::mat4 depthViewMatrix = glm::lookAt(lightPos, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 depthModelMatrix = glm::mat4();
+
+        ubo.depthMVP = depthProjectionMatrix * depthViewMatrix * depthModelMatrix;
+
         camera_control();
 
         UniformNormalParameters unp = {};
@@ -1608,6 +1637,10 @@ namespace ve {
             position + direction, // and looks here : at the same position, plus "direction"
             up                  // Head is up (set to 0,-1,0 to look upside-down)
         );
+
+        umo.lightSpace = ubo.depthMVP;
+
+        umo.lightPos = lightPos;
 
         // For the next frame, the "last time" will be "now"
         lastTime = currentTime;
@@ -2146,19 +2179,10 @@ namespace ve {
 
     void VEngine::UpdateShadowUniformBuffer()
     {
-        // Matrix from light's point of view
-        glm::mat4 depthProjectionMatrix = glm::perspective(glm::radians(45.0f), 1.0f, 0.001f, 1000.0f);
-        glm::mat4 depthViewMatrix = glm::lookAt(glm::vec3(0,10, 0), glm::vec3(0.0f), glm::vec3(0, 1, 0));
-        glm::mat4 depthModelMatrix = glm::mat4();
-
-        ShadowUBO ubo;
-        ubo.depthMVP = depthProjectionMatrix * depthViewMatrix * depthModelMatrix;
-
         void* uboData;
         vkMapMemory(device, shadowUniformBufferMemory, 0, sizeof(ShadowUBO), 0, &uboData);
         memcpy(uboData, &ubo.depthMVP, sizeof(ShadowUBO));
         vkUnmapMemory(device, shadowUniformBufferMemory);
-
     }
 
     VkShaderModule VEngine::createShaderModule(const std::vector<char>& code) {

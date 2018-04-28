@@ -8,6 +8,7 @@ layout(location = 2) in vec3 outNormal;
 layout(location = 3) in vec3 outLightPos;
 layout(location = 4) in vec3 outFragPos;	// out view
 layout(location = 5) in vec3 outPosition;
+layout(location = 6) in vec4 outShadowCoord;
 
 // normal 
 layout(binding = 1) uniform UniformNormalParameters{
@@ -62,6 +63,7 @@ layout(binding = 7) uniform UniformSpecialTextureParameters{
 }ustp;
 
 layout(binding = 8) uniform sampler2D cutOffTexture;
+layout(binding = 9) uniform sampler2D shadowMap;
 
 //uniform sampler2D u_texReflection[7];
 
@@ -220,6 +222,46 @@ vec3 perturb_normal( vec3 N, vec3 V, vec2 texcoord )
     return normalize(TBN * map);
 }
 
+#define ambient 0.1
+
+float textureProj(vec4 P, vec2 off)
+{
+	float shadow = 1.0;
+	vec4 shadowCoord = P / P.w;
+	if ( shadowCoord.z > -1.0 && shadowCoord.z < 1.0 ) 
+	{
+		float dist = texture( shadowMap, shadowCoord.st + off ).r;
+		if ( shadowCoord.w > 0.0 && dist < shadowCoord.z ) 
+		{
+			shadow = ambient;
+		}
+	}
+	return shadow;
+}
+
+float filterPCF(vec4 sc)
+{
+	ivec2 texDim = textureSize(shadowMap, 0);
+	float scale = 1.5;
+	float dx = scale * 1.0 / float(texDim.x);
+	float dy = scale * 1.0 / float(texDim.y);
+
+	float shadowFactor = 0.0;
+	int count = 0;
+	int range = 1;
+	
+	for (int x = -range; x <= range; x++)
+	{
+		for (int y = -range; y <= range; y++)
+		{
+			shadowFactor += textureProj(sc, vec2(dx*x, dy*y));
+			count++;
+		}
+	
+	}
+	return shadowFactor / count;
+}
+
 // main routine
 void main()
 {
@@ -331,12 +373,14 @@ void main()
 	float NdotL = max(dot(vL, vN), 0.0);
 	float NdotH = max(dot(vN, vH), 0.0);
 	float HdotXY = sqrt(1.0 - NdotH * NdotH);
+    
+    float shadow = textureProj(outShadowCoord / outShadowCoord.w, vec2(0.0));
 
 	float fSpecCoef = specularWardAdv(NdotL, NdotV, NdotH, HdotXY, unp.shininess);
 	float fDiffCoef = diffuseOrenNayar(unp.diffuseRough, vN, vL, vV, NdotL, NdotV);
 
 	// shading computtaion
 	outColor = gammaCorrection(2.2, 
-		(ks * fSpecCoef + kd * fDiffCoef) * fFallOff + cReflectinContribution);
+		(ks * fSpecCoef + kd * fDiffCoef * shadow) * fFallOff + cReflectinContribution);
 	outColor.a = 1.0;
 }

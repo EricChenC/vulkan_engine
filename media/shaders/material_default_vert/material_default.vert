@@ -5,6 +5,8 @@
 layout(binding = 0) uniform UniformBufferObject {
     mat4 view;
     mat4 proj;
+    mat4 lightSpace;
+	vec3 lightPos;
 } ubo;
 
 layout(push_constant) uniform ModelMatrix {
@@ -20,10 +22,17 @@ layout(location = 2) out smooth vec3 outNormal;
 layout(location = 3) out smooth vec3 outLightPos;
 layout(location = 4) out smooth vec3 outFragPos;	// out view
 layout(location = 5) out smooth vec3 outPosition;
+layout(location = 6) out smooth vec4 outShadowCoord;
 
 out gl_PerVertex {
     vec4 gl_Position;
 };
+
+const mat4 biasMat = mat4( 
+	0.5, 0.0, 0.0, 0.0,
+	0.0, 0.5, 0.0, 0.0,
+	0.0, 0.0, 1.0, 0.0,
+	0.5, 0.5, 0.0, 1.0 );
 
 // vertex shader
 void main()
@@ -46,4 +55,6 @@ void main()
 	outLightPos = normalize(inverse(ubo.view)* vec4(0.0, 0.0, 1.0, 1.0)).xyz;
 	outFragPos = pos.xyz;
 	outPosition = inPosition;
+
+	outShadowCoord = ( biasMat * ubo.lightSpace * mt.model ) * vec4(inPosition, 1.0);
 }

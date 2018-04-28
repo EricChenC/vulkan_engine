@@ -120,6 +120,8 @@ namespace ve {
         struct UniformMatrixBufferObject {
             glm::mat4 view;
             glm::mat4 proj;
+            glm::mat4 lightSpace;
+            glm::vec3 lightPos;
         };
 
         struct ConstantMatrixModel {
@@ -192,6 +194,10 @@ namespace ve {
         struct ShadowUBO {
             glm::mat4 depthMVP;
         };
+
+        ShadowUBO ubo = {};
+
+        glm::vec3 lightPos = glm::vec3(0,10,10);
 
         struct ShadowVertex {
             glm::vec3 pos;
@@ -468,7 +474,7 @@ namespace ve {
         const std::string SPECULAR_TEXTURE_PATH = "D:/project/vulkan_engine/media/textures/artificial-stone01-specular.png";*/
 
         // version 2
-        const std::string MODEL_PATH = "D:/project/vulkan_engine/media/models/two_object.obj";
+        const std::string MODEL_PATH = "D:/project/vulkan_engine/media/models/shadow.obj";
         const std::string TEXTURE_PATH = "D:/project/vulkan_engine/media/revite_textures/Masonry.Stone.Limestone.Rustic.png";
         const std::string SPECULAR_TEXTURE_PATH = "D:/project/vulkan_engine/media/revite_textures/Masonry.Stone.Limestone.Rustic.bump.png";
         const std::string BUMP_TEXTURE_PATH = "D:/project/vulkan_engine/media/revite_textures/Masonry.Stone.Limestone.Rustic.bump-normal.png";
