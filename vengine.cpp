@@ -1,4 +1,5 @@
 #include "vengine.h"
+#include "vtool.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -1514,11 +1515,10 @@ namespace ve {
         VkSemaphoreCreateInfo semaphoreInfo = {};
         semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-        if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS ||
-            vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS) {
+        VK_CHECK_RESULT(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphore));
+        VK_CHECK_RESULT(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphore));
+        VK_CHECK_RESULT(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &shadowSemaphore));
 
-            throw std::runtime_error("failed to create semaphores!");
-        }
     }
 
     void VEngine::updateUniformBuffer() {
@@ -1705,10 +1705,9 @@ namespace ve {
         VkSubmitInfo shadowSubmitInfo = {};
         shadowSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-        VkSemaphore shadowWaitSemaphores[] = { imageAvailableSemaphore };
         VkPipelineStageFlags shadowWaitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
         shadowSubmitInfo.waitSemaphoreCount = 1;
-        shadowSubmitInfo.pWaitSemaphores = shadowWaitSemaphores;
+        shadowSubmitInfo.pWaitSemaphores = &imageAvailableSemaphore;
         shadowSubmitInfo.pWaitDstStageMask = shadowWaitStages;
 
         shadowSubmitInfo.signalSemaphoreCount = 1;
@@ -1716,29 +1715,23 @@ namespace ve {
 
         shadowSubmitInfo.pCommandBuffers = &shadowCommandbuffer;
 
-        if (vkQueueSubmit(presentQueue, 1, &shadowSubmitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
-            throw std::runtime_error("failed to submit draw command buffer!");
-        }
+        VK_CHECK_RESULT(vkQueueSubmit(presentQueue, 1, &shadowSubmitInfo, VK_NULL_HANDLE));
 
         VkSubmitInfo submitInfo = {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-        VkSemaphore waitSemaphores[] = { shadowSemaphore };
         VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
         submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = waitSemaphores;
+        submitInfo.pWaitSemaphores = &shadowSemaphore;
         submitInfo.pWaitDstStageMask = waitStages;
 
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &commandBuffers[imageIndex];
 
-        VkSemaphore signalSemaphores[] = { renderFinishedSemaphore };
         submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = signalSemaphores;
+        submitInfo.pSignalSemaphores = &renderFinishedSemaphore;
 
-        if (vkQueueSubmit(presentQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
-            throw std::runtime_error("failed to submit draw command buffer!");
-        }
+        VK_CHECK_RESULT(vkQueueSubmit(presentQueue, 1, &submitInfo, VK_NULL_HANDLE)); 
 
         VkPresentInfoKHR presentInfo = {};
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -1752,7 +1745,7 @@ namespace ve {
 
         presentInfo.pImageIndices = &imageIndex;
 
-        result = vkQueuePresentKHR(presentQueue, &presentInfo);
+        VK_CHECK_RESULT(vkQueuePresentKHR(presentQueue, &presentInfo));
 
         //if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
         //    recreateSwapChain();
@@ -1761,7 +1754,7 @@ namespace ve {
         //    throw std::runtime_error("failed to present swap chain image!");
         //}
 
-        vkQueueWaitIdle(presentQueue);
+        VK_CHECK_RESULT(vkQueueWaitIdle(presentQueue));
     }
 
     void VEngine::RecreateBufer()
@@ -1791,7 +1784,7 @@ namespace ve {
         image.tiling = VK_IMAGE_TILING_OPTIMAL;
         image.format = DEPTH_FORMAT;																// Depth stencil attachment
         image.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;		// We will sample directly from the depth attachment for the shadow mapping
-        vkCreateImage(device, &image, nullptr, &shadowImage);
+        VK_CHECK_RESULT(vkCreateImage(device, &image, nullptr, &shadowImage));
 
         VkMemoryAllocateInfo memAlloc = {};
         VkMemoryRequirements memReqs = {};
@@ -1800,10 +1793,10 @@ namespace ve {
         vkGetImageMemoryRequirements(device, shadowImage, &memReqs);
         memAlloc.allocationSize = memReqs.size;
 
-         memAlloc.memoryTypeIndex = findMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-        vkAllocateMemory(device, &memAlloc, nullptr, &shadowImageMemory);
+        memAlloc.memoryTypeIndex = findMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, &shadowImageMemory));
 
-        vkBindImageMemory(device, shadowImage, shadowImageMemory, 0);
+        VK_CHECK_RESULT(vkBindImageMemory(device, shadowImage, shadowImageMemory, 0));
 
         VkImageViewCreateInfo depthStencilView = {};
         depthStencilView.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -1816,7 +1809,7 @@ namespace ve {
         depthStencilView.subresourceRange.baseArrayLayer = 0;
         depthStencilView.subresourceRange.layerCount = 1;
         depthStencilView.image = shadowImage;
-        vkCreateImageView(device, &depthStencilView, nullptr, &shadowImageView);
+        VK_CHECK_RESULT(vkCreateImageView(device, &depthStencilView, nullptr, &shadowImageView));
 
         // Create sampler to sample from to depth attachment 
         // Used to sample in the fragment shader for shadowed rendering
@@ -1833,7 +1826,7 @@ namespace ve {
         sampler.minLod = 0.0f;
         sampler.maxLod = 1.0f;
         sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-        vkCreateSampler(device, &sampler, nullptr, &shadowImageSampler);
+        VK_CHECK_RESULT(vkCreateSampler(device, &sampler, nullptr, &shadowImageSampler));
 
         CreateShadowRenderPass();
 
@@ -1847,7 +1840,7 @@ namespace ve {
         fbufCreateInfo.height = shadow_height;
         fbufCreateInfo.layers = 1;
 
-        vkCreateFramebuffer(device, &fbufCreateInfo, nullptr, &shadowFramebuffers);
+        VK_CHECK_RESULT(vkCreateFramebuffer(device, &fbufCreateInfo, nullptr, &shadowFramebuffers));
 
 
     }
@@ -1901,7 +1894,7 @@ namespace ve {
         renderPassCreateInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
         renderPassCreateInfo.pDependencies = dependencies.data();
 
-        vkCreateRenderPass(device, &renderPassCreateInfo, nullptr, &shadowRenderPass);
+        VK_CHECK_RESULT(vkCreateRenderPass(device, &renderPassCreateInfo, nullptr, &shadowRenderPass));
     }
 
     void VEngine::CreateShadowLayout()
@@ -1924,14 +1917,14 @@ namespace ve {
         descriptorLayout.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
         descriptorLayout.pBindings = setLayoutBindings.data();
 
-        vkCreateDescriptorSetLayout(device, &descriptorLayout, nullptr, &shadowDescriptorSetLayout);
+        VK_CHECK_RESULT(vkCreateDescriptorSetLayout(device, &descriptorLayout, nullptr, &shadowDescriptorSetLayout));
 
         VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo = {};
         pPipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pPipelineLayoutCreateInfo.setLayoutCount = 1;
         pPipelineLayoutCreateInfo.pSetLayouts = &shadowDescriptorSetLayout;
 
-        vkCreatePipelineLayout(device, &pPipelineLayoutCreateInfo, nullptr, &shadowPipelineLayout);
+        VK_CHECK_RESULT(vkCreatePipelineLayout(device, &pPipelineLayoutCreateInfo, nullptr, &shadowPipelineLayout));
 
     }
 
@@ -1944,7 +1937,7 @@ namespace ve {
         createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
         void* data;
-        vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
+        VK_CHECK_RESULT(vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data));
         memcpy(data, vertices.data(), (size_t)bufferSize);
         vkUnmapMemory(device, stagingBufferMemory);
 
@@ -1966,7 +1959,7 @@ namespace ve {
         createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
         void* data;
-        vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
+        VK_CHECK_RESULT(vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data));
         memcpy(data, indices.data(), (size_t)bufferSize);
         vkUnmapMemory(device, stagingBufferMemory);
 
@@ -1998,9 +1991,8 @@ namespace ve {
         poolInfo.pPoolSizes = poolSizes.data();
         poolInfo.maxSets = 1;
 
-        if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &shadowDescriptorPool) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create descriptor pool!");
-        }
+        VK_CHECK_RESULT(vkCreateDescriptorPool(device, &poolInfo, nullptr, &shadowDescriptorPool));
+
     }
 
     void VEngine::CreateShadowDescriptorSet()
@@ -2012,9 +2004,7 @@ namespace ve {
         allocInfo.descriptorSetCount = 1;
         allocInfo.pSetLayouts = layouts;
 
-        if (vkAllocateDescriptorSets(device, &allocInfo, &shadowDescriptorSet) != VK_SUCCESS) {
-            throw std::runtime_error("failed to allocate descriptor set!");
-        }
+        VK_CHECK_RESULT(vkAllocateDescriptorSets(device, &allocInfo, &shadowDescriptorSet));
 
         VkDescriptorBufferInfo matrixBufferInfo = {};
         matrixBufferInfo.buffer = shadowUniformBuffer;
@@ -2132,9 +2122,8 @@ namespace ve {
         pipelineInfo.pDynamicState = &dynamicState;
 
 
-        if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &shadowPipeline) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create graphics pipeline!");
-        }
+        VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &shadowPipeline)); 
+
 
         vkDestroyShaderModule(device, fragShaderModule, nullptr);
         vkDestroyShaderModule(device, vertShaderModule, nullptr);
@@ -2150,14 +2139,8 @@ namespace ve {
         allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         allocInfo.commandBufferCount = 1;
 
-        if (vkAllocateCommandBuffers(device, &allocInfo, &shadowCommandbuffer) != VK_SUCCESS) {
-            throw std::runtime_error("failed to allocate command buffers!");
-        }
-
-        VkSemaphoreCreateInfo semaphoreCreateInfo = {};
-        semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-        vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &shadowSemaphore);
-
+        VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &allocInfo, &shadowCommandbuffer));
+       
         VkCommandBufferBeginInfo cmdBufInfo = {};
         cmdBufInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
@@ -2175,7 +2158,7 @@ namespace ve {
         renderPassBeginInfo.clearValueCount = 1;
         renderPassBeginInfo.pClearValues = clearValues;
 
-        vkBeginCommandBuffer(shadowCommandbuffer, &cmdBufInfo);
+        VK_CHECK_RESULT(vkBeginCommandBuffer(shadowCommandbuffer, &cmdBufInfo));
 
         VkViewport viewport = {};
         viewport.width = shadow_width;
@@ -2211,14 +2194,14 @@ namespace ve {
 
         vkCmdEndRenderPass(shadowCommandbuffer);
 
-        vkEndCommandBuffer(shadowCommandbuffer);
+        VK_CHECK_RESULT(vkEndCommandBuffer(shadowCommandbuffer));
 
     }
 
     void VEngine::UpdateShadowUniformBuffer()
     {
         void* uboData;
-        vkMapMemory(device, shadowUniformBufferMemory, 0, sizeof(ShadowUBO), 0, &uboData);
+        VK_CHECK_RESULT(vkMapMemory(device, shadowUniformBufferMemory, 0, sizeof(ShadowUBO), 0, &uboData));
         memcpy(uboData, &ubo.depthMVP, sizeof(ShadowUBO));
         vkUnmapMemory(device, shadowUniformBufferMemory);
     }

@@ -113,9 +113,6 @@ namespace ve {
 
         void UpdateShadowUniformBuffer();
 
-
-
-
     public:
         struct UniformMatrixBufferObject {
             glm::mat4 view;
