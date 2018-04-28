@@ -172,9 +172,16 @@ namespace ve {
             vkDestroySampler(device, *info->sampler, nullptr);
         }
 
+        vkDestroyImage(device, shadowImage, nullptr);
+        vkFreeMemory(device, shadowImageMemory, nullptr);
+        vkDestroyImageView(device, shadowImageView, nullptr);
+        vkDestroySampler(device, shadowImageSampler, nullptr);
+
         vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+        vkDestroyDescriptorPool(device, shadowDescriptorPool, nullptr);
 
         vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
+        vkDestroyDescriptorSetLayout(device, shadowDescriptorSetLayout, nullptr);
 
         vkDestroyBuffer(device, uniformMatrixBuffer, nullptr);
         vkFreeMemory(device, uniformMatrixBufferMemory, nullptr);
@@ -197,8 +204,18 @@ namespace ve {
         vkDestroyBuffer(device, vertexBuffer, nullptr);
         vkFreeMemory(device, vertexBufferMemory, nullptr);
 
+        vkDestroyBuffer(device, shadowVertexBuffer, nullptr);
+        vkFreeMemory(device, shadowVertexBufferMemory, nullptr);
+
+        vkDestroyBuffer(device, shadowIndexBuffer, nullptr);
+        vkFreeMemory(device, shadowIndexBufferMemory, nullptr);
+
+        vkDestroyBuffer(device, shadowUniformBuffer, nullptr);
+        vkFreeMemory(device, shadowUniformBufferMemory, nullptr);
+
         vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
         vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
+        vkDestroySemaphore(device, shadowSemaphore, nullptr);
 
         vkDestroyCommandPool(device, commandPool, nullptr);
 
@@ -292,11 +309,19 @@ namespace ve {
             vkDestroyFramebuffer(device, swapChainFramebuffers[i], nullptr);
         }
 
+        vkDestroyFramebuffer(device, shadowFramebuffers, nullptr);
+
         vkFreeCommandBuffers(device, commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
+        vkFreeCommandBuffers(device, commandPool, 1, &shadowCommandbuffer);
+
 
         vkDestroyPipeline(device, graphicsPipeline, nullptr);
         vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
         vkDestroyRenderPass(device, renderPass, nullptr);
+
+        vkDestroyPipeline(device, shadowPipeline, nullptr);
+        vkDestroyPipelineLayout(device, shadowPipelineLayout, nullptr);
+        vkDestroyRenderPass(device, shadowRenderPass, nullptr);
 
         for (size_t i = 0; i < swapChainImageViews.size(); i++) {
             vkDestroyImageView(device, swapChainImageViews[i], nullptr);
@@ -443,7 +468,7 @@ namespace ve {
             throw std::runtime_error("failed to create logical device!");
         }
 
-        vkGetDeviceQueue(device, indices.graphicsFamily, 0, &graphicsQueue);
+        //vkGetDeviceQueue(device, indices.graphicsFamily, 0, &graphicsQueue);
         vkGetDeviceQueue(device, indices.presentFamily, 0, &presentQueue);
     }
 
@@ -733,7 +758,7 @@ namespace ve {
 
         VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
         colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-        colorBlendAttachment.blendEnable = VK_TRUE;
+        colorBlendAttachment.blendEnable = VK_FALSE;
         colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
         colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_COLOR;
         colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
@@ -1430,8 +1455,20 @@ namespace ve {
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &commandBuffer;
 
-        vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-        vkQueueWaitIdle(graphicsQueue);
+       /* vkQueueSubmit(presentQueue, 1, &submitInfo, VK_NULL_HANDLE);
+        vkQueueWaitIdle(presentQueue);*/
+
+        // Create fence to ensure that the command buffer has finished executing
+        VkFenceCreateInfo fenceInfo = {};
+        fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+
+        VkFence fence;
+        vkCreateFence(device, &fenceInfo, nullptr, &fence);
+
+        vkQueueSubmit(presentQueue, 1, &submitInfo, fence);
+        vkWaitForFences(device, 1, &fence, VK_TRUE, 100000000000);
+
+        vkDestroyFence(device, fence, nullptr);
 
         vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
     }
@@ -1657,13 +1694,13 @@ namespace ve {
         uint32_t imageIndex;
         VkResult result = vkAcquireNextImageKHR(device, swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 
-        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+       /* if (result == VK_ERROR_OUT_OF_DATE_KHR) {
             recreateSwapChain();
             return;
         }
         else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
             throw std::runtime_error("failed to acquire swap chain image!");
-        }
+        }*/
 
         VkSubmitInfo shadowSubmitInfo = {};
         shadowSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -1679,7 +1716,7 @@ namespace ve {
 
         shadowSubmitInfo.pCommandBuffers = &shadowCommandbuffer;
 
-        if (vkQueueSubmit(graphicsQueue, 1, &shadowSubmitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+        if (vkQueueSubmit(presentQueue, 1, &shadowSubmitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
             throw std::runtime_error("failed to submit draw command buffer!");
         }
 
@@ -1699,7 +1736,7 @@ namespace ve {
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
-        if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+        if (vkQueueSubmit(presentQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
             throw std::runtime_error("failed to submit draw command buffer!");
         }
 
@@ -1707,7 +1744,7 @@ namespace ve {
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
         presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = signalSemaphores;
+        presentInfo.pWaitSemaphores = &renderFinishedSemaphore;
 
         VkSwapchainKHR swapChains[] = { swapChain };
         presentInfo.swapchainCount = 1;
@@ -1717,12 +1754,12 @@ namespace ve {
 
         result = vkQueuePresentKHR(presentQueue, &presentInfo);
 
-        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-            recreateSwapChain();
-        }
-        else if (result != VK_SUCCESS) {
-            throw std::runtime_error("failed to present swap chain image!");
-        }
+        //if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+        //    recreateSwapChain();
+        //}
+        //else if (result != VK_SUCCESS) {
+        //    throw std::runtime_error("failed to present swap chain image!");
+        //}
 
         vkQueueWaitIdle(presentQueue);
     }
@@ -1758,13 +1795,14 @@ namespace ve {
 
         VkMemoryAllocateInfo memAlloc = {};
         VkMemoryRequirements memReqs = {};
-        memAlloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 
+        memAlloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         vkGetImageMemoryRequirements(device, shadowImage, &memReqs);
         memAlloc.allocationSize = memReqs.size;
 
-        memAlloc.memoryTypeIndex = findMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+         memAlloc.memoryTypeIndex = findMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         vkAllocateMemory(device, &memAlloc, nullptr, &shadowImageMemory);
+
         vkBindImageMemory(device, shadowImage, shadowImageMemory, 0);
 
         VkImageViewCreateInfo depthStencilView = {};
@@ -2169,7 +2207,7 @@ namespace ve {
         VkDeviceSize offsets[1] = { 0 };
         vkCmdBindVertexBuffers(shadowCommandbuffer, 0, 1, &shadowVertexBuffer, offsets);
         vkCmdBindIndexBuffer(shadowCommandbuffer, shadowIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-        vkCmdDrawIndexed(shadowCommandbuffer, indices.size(), 1, 0, 0, 0);
+        vkCmdDrawIndexed(shadowCommandbuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
         vkCmdEndRenderPass(shadowCommandbuffer);
 

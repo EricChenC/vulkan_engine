@@ -304,7 +304,7 @@ namespace ve {
         VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
         VkDevice device;
 
-        VkQueue graphicsQueue;
+        //VkQueue graphicsQueue;
         VkQueue presentQueue;
 
         VkSwapchainKHR swapChain;
@@ -417,22 +417,20 @@ namespace ve {
         VkDescriptorSet shadowDescriptorSet;
         VkDescriptorSetLayout shadowDescriptorSetLayout;
 
-
         VkBuffer shadowVertexBuffer;
         VkDeviceMemory shadowVertexBufferMemory;
 
+        VkBuffer shadowVertexStagingBuffer;
+        VkDeviceMemory shadowVertexStagingBufferMemory;
+
+        VkBuffer shadowIndexStagingBuffer;
+        VkDeviceMemory shadowIndexStagingBufferMemory;
 
 
         VkBuffer shadowIndexBuffer;
         VkDeviceMemory shadowIndexBufferMemory;
         VkBuffer shadowUniformBuffer;
         VkDeviceMemory shadowUniformBufferMemory;
-
-
-
-
-
-
 
 
     private:
