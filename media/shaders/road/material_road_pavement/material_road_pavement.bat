@@ -1,1 +1,0 @@
-glslangvalidator -V material_road_pavement.frag -o material_road_pavement.frag.spv

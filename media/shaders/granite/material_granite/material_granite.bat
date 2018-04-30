@@ -1,1 +1,0 @@
-glslangvalidator -V material_granite.frag -o material_granite.frag.spv

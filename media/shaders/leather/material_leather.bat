@@ -1,1 +1,0 @@
-glslangvalidator -V material_leather.frag -o material_leather.frag.spv

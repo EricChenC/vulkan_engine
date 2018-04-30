@@ -1,1 +1,0 @@
-glslangvalidator -V material_mirror.frag -o material_mirror.frag.spv

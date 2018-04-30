@@ -1,1 +1,0 @@
-glslangvalidator -V material_tile_stone_proc.frag -o material_tile_stone_proc.frag.spv

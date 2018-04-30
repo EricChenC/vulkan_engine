@@ -77,7 +77,6 @@ namespace ve {
         void createGraphicsPipeline();
         void createFramebuffers();
         void createCommandPool();
-        void createDepthResources();
 
         void SetTextureInfo();
 
@@ -87,9 +86,7 @@ namespace ve {
         void createUniformBuffer();
         void createDescriptorPool();
         void createDescriptorSet();
-        void createCommandBuffers();
-
-        void ConstructCommandBuffers();
+        void CreateCommandBuffers();
 
         void createSemaphores();
         void updateUniformBuffer();
@@ -194,37 +191,7 @@ namespace ve {
 
         ShadowUBO ubo = {};
 
-        glm::vec3 lightPos = glm::vec3(0,10,10);
-
-        struct ShadowVertex {
-            glm::vec3 pos;
-
-            static VkVertexInputBindingDescription getBindingDescription() {
-                VkVertexInputBindingDescription bindingDescription = {};
-                bindingDescription.binding = 0;
-                bindingDescription.stride = sizeof(ShadowVertex);
-                bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-                return bindingDescription;
-            }
-
-            static std::array<VkVertexInputAttributeDescription, 1> getAttributeDescriptions() {
-                std::array<VkVertexInputAttributeDescription, 1> attributeDescriptions = {};
-
-                attributeDescriptions[0].binding = 0;
-                attributeDescriptions[0].location = 0;
-                attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-                attributeDescriptions[0].offset = offsetof(ShadowVertex, pos);
-               
-                return attributeDescriptions;
-            }
-
-            bool operator==(const ShadowVertex& other) const {
-                return pos == other.pos;
-            }
-        };
-
-
+        glm::vec3 lightPos = glm::vec3(0.1f,10.0f,0.1f);
 
         struct Vertex {
             glm::vec3 pos;

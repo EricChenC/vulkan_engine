@@ -232,6 +232,7 @@ namespace ve {
 
     void VEngine::Run()
     {
+        loadModel();
         initWindow();
         initVulkan();
         mainLoop();
@@ -255,39 +256,34 @@ namespace ve {
         createSurface();
         pickPhysicalDevice();
         createLogicalDevice();
+        createSemaphores();
         createSwapChain();
         createImageViews();
-        createRenderPass();
-        createDescriptorSetLayout();
-        createGraphicsPipeline();
         createCommandPool();
-        createDepthResources();
+        createRenderPass();
         createFramebuffers();
-
+        CreateShadowRenderPass();
         CreateShadowFrameBuffer();
+
         CreateShadowLayout();
-
-        SetTextureInfo();
-        loadModel();
-        createVertexBuffer();
-        createIndexBuffer();
-        createUniformBuffer();
-        createDescriptorPool();
-        createDescriptorSet();
-
-        createCommandBuffers();
-        ConstructCommandBuffers();
-
+        CreateShadowPipeline();
         CreateShadowVertexBuffer();
         CreateShadowIndexBuffer();
         CreateShadowUniformBuffer();
         CreateShadowDescriptorPool();
         CreateShadowDescriptorSet();
-
-        CreateShadowPipeline();
         CreateShadowCommandBuffer();
-        
-        createSemaphores();
+
+        createDescriptorSetLayout();
+        createGraphicsPipeline();
+        SetTextureInfo();
+        createVertexBuffer();
+        createIndexBuffer();
+        createUniformBuffer();
+        createDescriptorPool();
+        createDescriptorSet();
+        CreateCommandBuffers();
+
     }
 
     void VEngine::mainLoop() {
@@ -339,15 +335,14 @@ namespace ve {
         createSwapChain();
         createImageViews();
         createRenderPass();
-        CreateShadowRenderPass();
         createGraphicsPipeline();
-        CreateShadowPipeline();
-        createDepthResources();
         createFramebuffers();
+
+        CreateShadowRenderPass();
         CreateShadowFrameBuffer();
-        createCommandBuffers();
+        CreateShadowPipeline();
         CreateShadowCommandBuffer();
-        ConstructCommandBuffers();
+        CreateCommandBuffers();
 
     }
 
@@ -358,9 +353,9 @@ namespace ve {
 
         VkApplicationInfo appInfo = {};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        appInfo.pApplicationName = "Hello Triangle";
+        appInfo.pApplicationName = "Hello Vulkan";
         appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.pEngineName = "No Engine";
+        appInfo.pEngineName = "Vulkan Engine";
         appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
         appInfo.apiVersion = VK_API_VERSION_1_0;
 
@@ -569,13 +564,24 @@ namespace ve {
         subpass.pColorAttachments = &colorAttachmentRef;
         subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
-        VkSubpassDependency dependency = {};
-        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependency.dstSubpass = 0;
-        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.srcAccessMask = 0;
-        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        std::array<VkSubpassDependency, 2> dependencies;
+
+        dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+        dependencies[0].dstSubpass = 0;
+        dependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+        dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+        dependencies[1].srcSubpass = 0;
+        dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+        dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+        dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
 
         std::array<VkAttachmentDescription, 2> attachments = { colorAttachment, depthAttachment };
         VkRenderPassCreateInfo renderPassInfo = {};
@@ -584,8 +590,8 @@ namespace ve {
         renderPassInfo.pAttachments = attachments.data();
         renderPassInfo.subpassCount = 1;
         renderPassInfo.pSubpasses = &subpass;
-        renderPassInfo.dependencyCount = 1;
-        renderPassInfo.pDependencies = &dependency;
+        renderPassInfo.dependencyCount = 2;
+        renderPassInfo.pDependencies = dependencies.data();
 
         if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
             throw std::runtime_error("failed to create render pass!");
@@ -822,6 +828,13 @@ namespace ve {
     void VEngine::createFramebuffers() {
         swapChainFramebuffers.resize(swapChainImageViews.size());
 
+        VkFormat depthFormat = findDepthFormat();
+
+        createImage(swapChainExtent.width, swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
+        depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+        transitionImageLayout(depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
         for (size_t i = 0; i < swapChainImageViews.size(); i++) {
             std::array<VkImageView, 2> attachments = {
                 swapChainImageViews[i],
@@ -843,8 +856,21 @@ namespace ve {
         }
     }
 
-    void VEngine::ConstructCommandBuffers()
+    void VEngine::CreateCommandBuffers()
     {
+
+        commandBuffers.resize(swapChainFramebuffers.size());
+
+        VkCommandBufferAllocateInfo allocInfo = {};
+        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.commandPool = commandPool;
+        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandBufferCount = (uint32_t)commandBuffers.size();
+
+        if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
+            throw std::runtime_error("failed to allocate command buffers!");
+        }
+
         for (size_t i = 0; i < commandBuffers.size(); i++) {
             VkCommandBufferBeginInfo beginInfo = {};
             beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -902,15 +928,6 @@ namespace ve {
         if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
             throw std::runtime_error("failed to create graphics command pool!");
         }
-    }
-
-    void VEngine::createDepthResources() {
-        VkFormat depthFormat = findDepthFormat();
-
-        createImage(swapChainExtent.width, swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
-        depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
-
-        transitionImageLayout(depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
     }
 
     void VEngine::SetTextureInfo()
@@ -1216,7 +1233,7 @@ namespace ve {
     }
 
     void VEngine::createDescriptorPool() {
-        std::array<VkDescriptorPoolSize, 9> poolSizes = {};
+        std::array<VkDescriptorPoolSize, 10> poolSizes = {};
         poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         poolSizes[0].descriptorCount = 1;
 
@@ -1243,6 +1260,9 @@ namespace ve {
 
         poolSizes[8].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         poolSizes[8].descriptorCount = 1;
+
+        poolSizes[9].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        poolSizes[9].descriptorCount = 1;
 
         VkDescriptorPoolCreateInfo poolInfo = {};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -1497,20 +1517,6 @@ namespace ve {
         throw std::runtime_error("failed to find suitable memory type!");
     }
 
-    void VEngine::createCommandBuffers() {
-        commandBuffers.resize(swapChainFramebuffers.size());
-
-        VkCommandBufferAllocateInfo allocInfo = {};
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.commandPool = commandPool;
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandBufferCount = (uint32_t)commandBuffers.size();
-
-        if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
-            throw std::runtime_error("failed to allocate command buffers!");
-        }
-    }
-
     void VEngine::createSemaphores() {
         VkSemaphoreCreateInfo semaphoreInfo = {};
         semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -1522,13 +1528,7 @@ namespace ve {
     }
 
     void VEngine::updateUniformBuffer() {
-        // Matrix from light's point of view
-        glm::mat4 depthProjectionMatrix = glm::perspective(glm::radians(45.0f), 1.0f, 0.001f, 1000.0f);
-        glm::mat4 depthViewMatrix = glm::lookAt(lightPos, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0f, 1.0f, 0.0f));
-        glm::mat4 depthModelMatrix = glm::mat4();
-
-        ubo.depthMVP = depthProjectionMatrix * depthViewMatrix * depthModelMatrix;
-
+        
         camera_control();
 
         UniformNormalParameters unp = {};
@@ -1713,6 +1713,7 @@ namespace ve {
         shadowSubmitInfo.signalSemaphoreCount = 1;
         shadowSubmitInfo.pSignalSemaphores = &shadowSemaphore;
 
+        shadowSubmitInfo.commandBufferCount = 1;
         shadowSubmitInfo.pCommandBuffers = &shadowCommandbuffer;
 
         VK_CHECK_RESULT(vkQueueSubmit(presentQueue, 1, &shadowSubmitInfo, VK_NULL_HANDLE));
@@ -1720,7 +1721,7 @@ namespace ve {
         VkSubmitInfo submitInfo = {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-        VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+        VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_ALL_COMMANDS_BIT };
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = &shadowSemaphore;
         submitInfo.pWaitDstStageMask = waitStages;
@@ -1759,14 +1760,19 @@ namespace ve {
 
     void VEngine::RecreateBufer()
     {
-        loadModel();
         createVertexBuffer();
         createIndexBuffer();
         createUniformBuffer();
         createDescriptorPool();
         createDescriptorSet();
-        createCommandBuffers();
-        ConstructCommandBuffers();
+        CreateCommandBuffers();
+
+        CreateShadowVertexBuffer();
+        CreateShadowIndexBuffer();
+        CreateShadowUniformBuffer();
+        CreateShadowDescriptorPool();
+        CreateShadowDescriptorSet();
+
     }
 
     void VEngine::CreateShadowFrameBuffer()
@@ -1828,8 +1834,6 @@ namespace ve {
         sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
         VK_CHECK_RESULT(vkCreateSampler(device, &sampler, nullptr, &shadowImageSampler));
 
-        CreateShadowRenderPass();
-
         // Create frame buffer
         VkFramebufferCreateInfo fbufCreateInfo = {};
         fbufCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -1865,7 +1869,6 @@ namespace ve {
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpass.colorAttachmentCount = 0;													// No color attachments
         subpass.pDepthStencilAttachment = &depthReference;									// Reference to our depth attachment
-
                                                                                             // Use subpass dependencies for layout transitions
         std::array<VkSubpassDependency, 2> dependencies;
 
@@ -2030,19 +2033,19 @@ namespace ve {
         auto vertShaderCode = readFile("D:/project/vulkan_engine/media/shaders/shadow/offscreen.vert.spv");
         auto fragShaderCode = readFile("D:/project/vulkan_engine/media/shaders/shadow/offscreen.frag.spv");
 
-        VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
-        VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
+        VkShaderModule shadowVertShaderModule = createShaderModule(vertShaderCode);
+        VkShaderModule shadowFragShaderModule = createShaderModule(fragShaderCode);
 
         VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
         vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-        vertShaderStageInfo.module = vertShaderModule;
+        vertShaderStageInfo.module = shadowVertShaderModule;
         vertShaderStageInfo.pName = "main";
 
         VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
         fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-        fragShaderStageInfo.module = fragShaderModule;
+        fragShaderStageInfo.module = shadowFragShaderModule;
         fragShaderStageInfo.pName = "main";
         
         VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
@@ -2050,11 +2053,11 @@ namespace ve {
         VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-        auto bindingDescription = ShadowVertex::getBindingDescription();
-        auto attributeDescriptions = ShadowVertex::getAttributeDescriptions();
+        auto bindingDescription = Vertex::getBindingDescription();
+        auto attributeDescriptions = Vertex::getAttributeDescriptions();
 
         vertexInputInfo.vertexBindingDescriptionCount = 1;
-        vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+        vertexInputInfo.vertexAttributeDescriptionCount = 1;
         vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
         vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
@@ -2125,8 +2128,8 @@ namespace ve {
         VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &shadowPipeline)); 
 
 
-        vkDestroyShaderModule(device, fragShaderModule, nullptr);
-        vkDestroyShaderModule(device, vertShaderModule, nullptr);
+        vkDestroyShaderModule(device, shadowFragShaderModule, nullptr);
+        vkDestroyShaderModule(device, shadowVertShaderModule, nullptr);
 
     }
 
@@ -2143,8 +2146,10 @@ namespace ve {
        
         VkCommandBufferBeginInfo cmdBufInfo = {};
         cmdBufInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        cmdBufInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
         VkClearValue clearValues[1];
+        clearValues[0].color = {1.0, 0.0, 0.0, 1.0};
         clearValues[0].depthStencil = { 1.0f, 0 };
 
         VkRenderPassBeginInfo renderPassBeginInfo = {};
@@ -2169,6 +2174,8 @@ namespace ve {
         vkCmdSetViewport(shadowCommandbuffer, 0, 1, &viewport);
 
         VkRect2D scissor = {};
+        scissor.offset.x = 0;
+        scissor.offset.y = 0;
         scissor.extent.width = shadow_width;
         scissor.extent.height = shadow_height;
 
@@ -2190,6 +2197,7 @@ namespace ve {
         VkDeviceSize offsets[1] = { 0 };
         vkCmdBindVertexBuffers(shadowCommandbuffer, 0, 1, &shadowVertexBuffer, offsets);
         vkCmdBindIndexBuffer(shadowCommandbuffer, shadowIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
         vkCmdDrawIndexed(shadowCommandbuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
         vkCmdEndRenderPass(shadowCommandbuffer);
@@ -2200,6 +2208,13 @@ namespace ve {
 
     void VEngine::UpdateShadowUniformBuffer()
     {
+        // Matrix from light's point of view
+        glm::mat4 depthProjectionMatrix = glm::perspective(glm::radians(45.0f), 1.0f, 0.001f, 1000.0f);
+        glm::mat4 depthViewMatrix = glm::lookAt(lightPos, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 depthModelMatrix = glm::mat4();
+
+        ubo.depthMVP = depthProjectionMatrix * depthViewMatrix * depthModelMatrix;
+
         void* uboData;
         VK_CHECK_RESULT(vkMapMemory(device, shadowUniformBufferMemory, 0, sizeof(ShadowUBO), 0, &uboData));
         memcpy(uboData, &ubo.depthMVP, sizeof(ShadowUBO));

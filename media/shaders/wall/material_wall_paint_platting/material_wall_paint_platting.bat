@@ -1,1 +1,0 @@
-glslangvalidator -V material_wall_paint_platting.frag -o material_wall_paint_platting.frag.spv

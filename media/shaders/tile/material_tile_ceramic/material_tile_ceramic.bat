@@ -1,1 +1,0 @@
-glslangvalidator -V material_tile_ceramic.frag -o material_tile_ceramic.frag.spv

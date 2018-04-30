@@ -1,1 +1,0 @@
-glslangvalidator -V material_tile_irragular_mosaic.frag -o material_tile_irragular_mosaic.frag.spv

@@ -1,1 +1,0 @@
-glslangvalidator -V material_checker.frag -o material_checker.frag.spv

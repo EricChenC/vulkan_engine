@@ -1,1 +1,0 @@
-glslangvalidator -V material_marble_proc.frag -o material_marble_proc.frag.spv

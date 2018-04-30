@@ -1,1 +1,0 @@
-glslangvalidator -V material_metal_brushed.frag -o material_metal_brushed.frag.spv
