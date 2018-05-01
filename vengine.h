@@ -81,6 +81,7 @@ namespace ve {
         void SetTextureInfo();
 
         void loadModel();
+        void loadShadowModel();
         void createVertexBuffer();
         void createIndexBuffer();
         void createUniformBuffer();
@@ -189,9 +190,34 @@ namespace ve {
             glm::mat4 depthMVP;
         };
 
-        ShadowUBO ubo = {};
+       
+        struct ShadowVertex {
+            glm::vec3 pos;
 
-        glm::vec3 lightPos = glm::vec3(0.1f,10.0f,0.1f);
+            static VkVertexInputBindingDescription getBindingDescription() {
+                VkVertexInputBindingDescription bindingDescription = {};
+                bindingDescription.binding = 0;
+                bindingDescription.stride = sizeof(ShadowVertex);
+                bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+                return bindingDescription;
+            }
+
+            static std::array<VkVertexInputAttributeDescription, 1> getAttributeDescriptions() {
+                std::array<VkVertexInputAttributeDescription, 1> attributeDescriptions = {};
+
+                attributeDescriptions[0].binding = 0;
+                attributeDescriptions[0].location = 0;
+                attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+                attributeDescriptions[0].offset = offsetof(ShadowVertex, pos);
+
+                return attributeDescriptions;
+            }
+
+            bool operator==(const ShadowVertex& other) const {
+                return pos == other.pos;
+            }
+        };
 
         struct Vertex {
             glm::vec3 pos;
@@ -234,8 +260,7 @@ namespace ve {
         };
 
     private:
-        VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
-        VkFormat findDepthFormat();
+        VkBool32 findDepthFormat(VkPhysicalDevice physicalDevice, VkFormat *depthFormat);
         bool hasStencilComponent(VkFormat format);
         VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
         void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
@@ -264,6 +289,8 @@ namespace ve {
         VkInstance instance;
         VkDebugReportCallbackEXT callback;
         VkSurfaceKHR surface;
+
+        VkFormat depthFormat;
 
         VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
         VkDevice device;
@@ -360,8 +387,8 @@ namespace ve {
 
 
         /* shadow */
-        uint32_t shadow_width = 2048;
-        uint32_t shadow_height = 2048;
+        std::vector<ShadowVertex> shadowVertices;
+        std::vector<uint32_t> shadowIndices;
 
         VkFramebuffer shadowFramebuffers;
         VkRenderPass shadowRenderPass;
@@ -426,27 +453,26 @@ namespace ve {
         double last_xpos_ = 0.0f;
         double last_ypos_ = 0.0f;
 
+        ShadowUBO ubo = {};
+
+        glm::vec3 lightPos = glm::vec3(10.1f, -10.0f, 0.1f);
+
+        uint32_t shadow_width = 2048;
+        uint32_t shadow_height = 2048;
+
         bool kFirstPress = true;
 
         const bool enableValidationLayers = true;
 
-        // version 1
-       /* const std::string MODEL_PATH = "D:/project/vulkan_engine/media/models/box.obj";
-        const std::string TEXTURE_PATH = "D:/project/vulkan_engine/media/textures/artificial-stone01-degamma.png";
-        const std::string SPECULAR_TEXTURE_PATH = "D:/project/vulkan_engine/media/textures/artificial-stone01-specular.png";*/
-
         // version 2
         const std::string MODEL_PATH = "D:/project/vulkan_engine/media/models/shadow.obj";
+        const std::string SHADOW_MODEL_PATH = "D:/project/vulkan_engine/media/models/shadow.obj";
         const std::string TEXTURE_PATH = "D:/project/vulkan_engine/media/revite_textures/Masonry.Stone.Limestone.Rustic.png";
         const std::string SPECULAR_TEXTURE_PATH = "D:/project/vulkan_engine/media/revite_textures/Masonry.Stone.Limestone.Rustic.bump.png";
         const std::string BUMP_TEXTURE_PATH = "D:/project/vulkan_engine/media/revite_textures/Masonry.Stone.Limestone.Rustic.bump-normal.png";
         const std::string CUTOFF_TEXTURE_PATH = "D:/project/vulkan_engine/media/revite_textures/Metal-cutoff02.png";
 
-        //// version 3
-        /*const std::string MODEL_PATH = "D:/project/vulkan_engine/media/models/box.obj";
-        const std::string TEXTURE_PATH = "D:/project/vulkan_engine/media/textures/artificial-stone03.png";
-        const std::string SPECULAR_TEXTURE_PATH = "D:/project/vulkan_engine/media/textures/artificial-stone03-specular.png";*/
-
+       
     };
 }
 

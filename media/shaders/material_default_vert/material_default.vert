@@ -38,22 +38,18 @@ const mat4 biasMat = mat4(
 void main()
 {
 	// Note: it is more efficient to calculate mvp_matrix outside
-	mat4 modelViewMatrix = ubo.view * mt.model;
-	mat4 normalMatrix = transpose(inverse(modelViewMatrix));
 
 	// calculate world(camera) position
-	vec4 pos = modelViewMatrix * vec4(inPosition, 1);
+	vec4 pos = mt.model * vec4(inPosition, 1.0);
 
 	// project to screen
-	gl_Position = ubo.proj * pos;
-	gl_Position.y = -gl_Position.y;
+	gl_Position = ubo.proj * ubo.view * mt.model * vec4(inPosition, 1.0);
 
 	// output to fragment shader
 	outTexcoord = inTexcoord;
-	vec4 n = normalMatrix * vec4(inNormal, 1);
-	outNormal = normalize(n.xyz);
-	outLightPos = normalize(inverse(ubo.view)* vec4(0.0, 0.0, 1.0, 1.0)).xyz;
-	outFragPos = pos.xyz;
+	outNormal = mat3(mt.model) * inNormal;
+	outLightPos = normalize(ubo.lightPos - inPosition);
+	outFragPos = -pos.xyz;
 	outPosition = inPosition;
 
 	outShadowCoord = ( biasMat * ubo.lightSpace * mt.model ) * vec4(inPosition, 1.0);

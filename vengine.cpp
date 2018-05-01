@@ -7,7 +7,6 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
-#define DEPTH_FORMAT VK_FORMAT_D16_UNORM
 #define SHADOWMAP_FILTER VK_FILTER_LINEAR
 
 
@@ -15,6 +14,12 @@ namespace std {
     template<> struct hash<ve::VEngine::Vertex> {
         size_t operator()(ve::VEngine::Vertex const& vertex) const {
             return ((hash<glm::vec3>()(vertex.pos) ^ (hash<glm::vec3>()(vertex.normal) << 1)) >> 1) ^ (hash<glm::vec2>()(vertex.texCoord) << 1);
+        }
+    };
+
+    template<> struct hash<ve::VEngine::ShadowVertex> {
+        size_t operator()(ve::VEngine::ShadowVertex const& vertex) const {
+            return (hash<glm::vec3>()(vertex.pos));
         }
     };
 }
@@ -233,6 +238,7 @@ namespace ve {
     void VEngine::Run()
     {
         loadModel();
+        loadShadowModel();
         initWindow();
         initVulkan();
         mainLoop();
@@ -257,6 +263,7 @@ namespace ve {
         pickPhysicalDevice();
         createLogicalDevice();
         createSemaphores();
+        findDepthFormat(physicalDevice, &depthFormat);
         createSwapChain();
         createImageViews();
         createCommandPool();
@@ -541,7 +548,7 @@ namespace ve {
         colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
         VkAttachmentDescription depthAttachment = {};
-        depthAttachment.format = findDepthFormat();
+        depthAttachment.format = depthFormat;
         depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
         depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -828,8 +835,6 @@ namespace ve {
     void VEngine::createFramebuffers() {
         swapChainFramebuffers.resize(swapChainImageViews.size());
 
-        VkFormat depthFormat = findDepthFormat();
-
         createImage(swapChainExtent.width, swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
         depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 
@@ -978,28 +983,30 @@ namespace ve {
 
     }
 
-    VkFormat VEngine::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
-        for (VkFormat format : candidates) {
-            VkFormatProperties props;
-            vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
+    VkBool32 VEngine::findDepthFormat(VkPhysicalDevice physicalDevice, VkFormat *depthFormat) {
+        // Since all depth formats may be optional, we need to find a suitable depth format to use
+        // Start with the highest precision packed format
+        std::vector<VkFormat> depthFormats = {
+            VK_FORMAT_D32_SFLOAT_S8_UINT,
+            VK_FORMAT_D32_SFLOAT,
+            VK_FORMAT_D24_UNORM_S8_UINT,
+            VK_FORMAT_D16_UNORM_S8_UINT,
+            VK_FORMAT_D16_UNORM
+        };
 
-            if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
-                return format;
-            }
-            else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
-                return format;
+        for (auto& format : depthFormats)
+        {
+            VkFormatProperties formatProps;
+            vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &formatProps);
+            // Format must support depth stencil attachment for optimal tiling
+            if (formatProps.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
+            {
+                *depthFormat = format;
+                return true;
             }
         }
 
-        throw std::runtime_error("failed to find supported format!");
-    }
-
-    VkFormat VEngine::findDepthFormat() {
-        return findSupportedFormat(
-        { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
-            VK_IMAGE_TILING_OPTIMAL,
-            VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
-        );
+        return false;
     }
 
     bool VEngine::hasStencilComponent(VkFormat format) {
@@ -1157,13 +1164,13 @@ namespace ve {
 
                 vertex.pos = {
                     attrib.vertices[3 * index.vertex_index + 0],
-                    attrib.vertices[3 * index.vertex_index + 1],
+                    -attrib.vertices[3 * index.vertex_index + 1],
                     attrib.vertices[3 * index.vertex_index + 2]
                 };
 
                 vertex.normal = {
                     attrib.normals[3 * index.normal_index + 0],
-                    attrib.normals[3 * index.normal_index + 1],
+                    -attrib.normals[3 * index.normal_index + 1],
                     attrib.normals[3 * index.normal_index + 2]
                 };
 
@@ -1178,6 +1185,39 @@ namespace ve {
                 }
 
                 indices.push_back(uniqueVertices[vertex]);
+            }
+        }
+    }
+
+    void VEngine::loadShadowModel()
+    {
+        tinyobj::attrib_t attrib;
+        std::vector<tinyobj::shape_t> shapes;
+        std::vector<tinyobj::material_t> materials;
+        std::string err;
+
+        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, SHADOW_MODEL_PATH.c_str())) {
+            throw std::runtime_error(err);
+        }
+
+        std::unordered_map<ShadowVertex, uint32_t> uniqueVertices = {};
+
+        for (const auto& shape : shapes) {
+            for (const auto& index : shape.mesh.indices) {
+                ShadowVertex vertex = {};
+
+                vertex.pos = {
+                    attrib.vertices[3 * index.vertex_index + 0],
+                    -attrib.vertices[3 * index.vertex_index + 1],
+                    attrib.vertices[3 * index.vertex_index + 2]
+                };
+
+                if (uniqueVertices.count(vertex) == 0) {
+                    uniqueVertices[vertex] = static_cast<uint32_t>(shadowVertices.size());
+                    shadowVertices.push_back(vertex);
+                }
+
+                shadowIndices.push_back(uniqueVertices[vertex]);
             }
         }
     }
@@ -1602,7 +1642,7 @@ namespace ve {
 
             // Compute new orientation
             horizontalAngle += mouseSpeed * float(last_xpos_ - xpos);
-            verticalAngle += mouseSpeed * float(last_ypos_ - ypos);
+            verticalAngle -= mouseSpeed * float(last_ypos_ - ypos);
 
             last_xpos_ = xpos;
             last_ypos_ = ypos;
@@ -1647,11 +1687,11 @@ namespace ve {
         }
         // Strafe up
         if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-            position.y += 2 * deltaTime * speed;
+            position.y -= 2 * deltaTime * speed;
         }
         // Strafe down
         if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
-            position.y -= 2 * deltaTime * speed;
+            position.y += 2 * deltaTime * speed;
         }
 
         // Strafe down
@@ -1788,7 +1828,8 @@ namespace ve {
         image.arrayLayers = 1;
         image.samples = VK_SAMPLE_COUNT_1_BIT;
         image.tiling = VK_IMAGE_TILING_OPTIMAL;
-        image.format = DEPTH_FORMAT;																// Depth stencil attachment
+
+        image.format = depthFormat;																// Depth stencil attachment
         image.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;		// We will sample directly from the depth attachment for the shadow mapping
         VK_CHECK_RESULT(vkCreateImage(device, &image, nullptr, &shadowImage));
 
@@ -1801,13 +1842,12 @@ namespace ve {
 
         memAlloc.memoryTypeIndex = findMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, &shadowImageMemory));
-
         VK_CHECK_RESULT(vkBindImageMemory(device, shadowImage, shadowImageMemory, 0));
 
         VkImageViewCreateInfo depthStencilView = {};
         depthStencilView.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         depthStencilView.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        depthStencilView.format = DEPTH_FORMAT;
+        depthStencilView.format = depthFormat;
         depthStencilView.subresourceRange = {};
         depthStencilView.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
         depthStencilView.subresourceRange.baseMipLevel = 0;
@@ -1828,7 +1868,7 @@ namespace ve {
         sampler.addressModeV = sampler.addressModeU;
         sampler.addressModeW = sampler.addressModeU;
         sampler.mipLodBias = 0.0f;
-        sampler.maxAnisotropy = 0;
+        sampler.maxAnisotropy = 1.0f;
         sampler.minLod = 0.0f;
         sampler.maxLod = 1.0f;
         sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
@@ -1852,7 +1892,7 @@ namespace ve {
     void VEngine::CreateShadowRenderPass()
     {
         VkAttachmentDescription attachmentDescription = {};
-        attachmentDescription.format = DEPTH_FORMAT;
+        attachmentDescription.format = depthFormat;
         attachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
         attachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;							// Clear depth at beginning of the render pass
         attachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;						// We will read from depth, so it's important to store the depth attachment results
@@ -1876,16 +1916,16 @@ namespace ve {
         dependencies[0].dstSubpass = 0;
         dependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
         dependencies[0].dstStageMask = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-        dependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+        dependencies[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
         dependencies[0].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
         dependencies[1].srcSubpass = 0;
         dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
         dependencies[1].srcStageMask = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-        dependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
         dependencies[1].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-        dependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+        dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
         dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
         VkRenderPassCreateInfo renderPassCreateInfo = {};
@@ -1933,7 +1973,7 @@ namespace ve {
 
     void VEngine::CreateShadowVertexBuffer()
     {
-        VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+        VkDeviceSize bufferSize = sizeof(shadowVertices[0]) * shadowVertices.size();
 
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
@@ -1941,7 +1981,7 @@ namespace ve {
 
         void* data;
         VK_CHECK_RESULT(vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data));
-        memcpy(data, vertices.data(), (size_t)bufferSize);
+        memcpy(data, shadowVertices.data(), (size_t)bufferSize);
         vkUnmapMemory(device, stagingBufferMemory);
 
         createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, shadowVertexBuffer, shadowVertexBufferMemory);
@@ -1955,7 +1995,7 @@ namespace ve {
 
     void VEngine::CreateShadowIndexBuffer()
     {
-        VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+        VkDeviceSize bufferSize = sizeof(shadowIndices[0]) * shadowIndices.size();
 
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
@@ -1963,7 +2003,7 @@ namespace ve {
 
         void* data;
         VK_CHECK_RESULT(vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data));
-        memcpy(data, indices.data(), (size_t)bufferSize);
+        memcpy(data, shadowIndices.data(), (size_t)bufferSize);
         vkUnmapMemory(device, stagingBufferMemory);
 
         createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, shadowIndexBuffer, shadowIndexBufferMemory);
@@ -2053,8 +2093,8 @@ namespace ve {
         VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-        auto bindingDescription = Vertex::getBindingDescription();
-        auto attributeDescriptions = Vertex::getAttributeDescriptions();
+        auto bindingDescription = ShadowVertex::getBindingDescription();
+        auto attributeDescriptions = ShadowVertex::getAttributeDescriptions();
 
         vertexInputInfo.vertexBindingDescriptionCount = 1;
         vertexInputInfo.vertexAttributeDescriptionCount = 1;
@@ -2073,8 +2113,6 @@ namespace ve {
 
         VkPipelineRasterizationStateCreateInfo rasterizer = {};
         rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-        rasterizer.depthClampEnable = VK_FALSE;
-        rasterizer.rasterizerDiscardEnable = VK_FALSE;
         rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
         rasterizer.lineWidth = 1.0f;
         rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
@@ -2090,7 +2128,7 @@ namespace ve {
         depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
         depthStencil.depthTestEnable = VK_TRUE;
         depthStencil.depthWriteEnable = VK_TRUE;
-        depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+        depthStencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
         depthStencil.depthBoundsTestEnable = VK_FALSE;
         depthStencil.stencilTestEnable = VK_FALSE;
 
@@ -2146,10 +2184,9 @@ namespace ve {
        
         VkCommandBufferBeginInfo cmdBufInfo = {};
         cmdBufInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        cmdBufInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+        //cmdBufInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
         VkClearValue clearValues[1];
-        clearValues[0].color = {1.0, 0.0, 0.0, 1.0};
         clearValues[0].depthStencil = { 1.0f, 0 };
 
         VkRenderPassBeginInfo renderPassBeginInfo = {};
@@ -2160,14 +2197,14 @@ namespace ve {
         renderPassBeginInfo.renderArea.offset.y = 0;
         renderPassBeginInfo.renderArea.extent.width = shadow_width;
         renderPassBeginInfo.renderArea.extent.height = shadow_height;
-        renderPassBeginInfo.clearValueCount = 1;
+        renderPassBeginInfo.clearValueCount = 2;
         renderPassBeginInfo.pClearValues = clearValues;
 
         VK_CHECK_RESULT(vkBeginCommandBuffer(shadowCommandbuffer, &cmdBufInfo));
 
         VkViewport viewport = {};
-        viewport.width = shadow_width;
-        viewport.height = shadow_height;
+        viewport.width = (float)shadow_width;
+        viewport.height = (float)shadow_height;
         viewport.minDepth = 0;
         viewport.maxDepth = 1;
         
@@ -2185,9 +2222,9 @@ namespace ve {
         // Required to avoid shadow mapping artefacts
         vkCmdSetDepthBias(
             shadowCommandbuffer,
-            1.25f,
+            2.5f,
             0.0f,
-            1.75f);
+            2.5f);
 
         vkCmdBeginRenderPass(shadowCommandbuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -2197,7 +2234,6 @@ namespace ve {
         VkDeviceSize offsets[1] = { 0 };
         vkCmdBindVertexBuffers(shadowCommandbuffer, 0, 1, &shadowVertexBuffer, offsets);
         vkCmdBindIndexBuffer(shadowCommandbuffer, shadowIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-
         vkCmdDrawIndexed(shadowCommandbuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
         vkCmdEndRenderPass(shadowCommandbuffer);
