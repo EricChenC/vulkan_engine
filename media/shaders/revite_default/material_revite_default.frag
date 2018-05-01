@@ -117,7 +117,9 @@ void main()
 	vec4 kd = texture(diffuseTexture, outTexcoord);
     
     // float shadow = textureProj(outShadowCoord / outShadowCoord.w, vec2(0.0));
-    float shadow = filterPCF(inShadowCoord / inShadowCoord.w);
+    float shadow = filterPCF(outShadowCoord / outShadowCoord.w);
+    
+    shadow = max(shadow, 0.4);
     
     vec3 N = normalize(outNormal);
 	vec3 L = normalize(outLightPos);

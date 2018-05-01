@@ -1715,7 +1715,7 @@ namespace ve {
             up                  // Head is up (set to 0,-1,0 to look upside-down)
         );
 
-        umo.lightSpace = ubo.depthMVP;
+        umo.lightSpace = bias * ubo.depthMVP;
 
         umo.lightPos = lightPos;
 
@@ -2222,9 +2222,9 @@ namespace ve {
         // Required to avoid shadow mapping artefacts
         vkCmdSetDepthBias(
             shadowCommandbuffer,
-            2.5f,
+            4.0f,
             0.0f,
-            2.5f);
+            4.5f);
 
         vkCmdBeginRenderPass(shadowCommandbuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 

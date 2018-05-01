@@ -455,7 +455,12 @@ namespace ve {
 
         ShadowUBO ubo = {};
 
-        glm::vec3 lightPos = glm::vec3(10.1f, -10.0f, 0.1f);
+        glm::vec3 lightPos = glm::vec3(-20.1f, -20.0f, 40.1f);
+
+        glm::mat4 bias = glm::mat4{ 0.5, 0.0, 0.0, 0.0,
+            0.0, 0.5, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.5, 0.5, 0.0, 1.0 };
 
         uint32_t shadow_width = 2048;
         uint32_t shadow_height = 2048;
@@ -465,8 +470,8 @@ namespace ve {
         const bool enableValidationLayers = true;
 
         // version 2
-        const std::string MODEL_PATH = "D:/project/vulkan_engine/media/models/shadow.obj";
-        const std::string SHADOW_MODEL_PATH = "D:/project/vulkan_engine/media/models/shadow.obj";
+        const std::string MODEL_PATH = "D:/project/vulkan_engine/media/models/house.obj";
+        const std::string SHADOW_MODEL_PATH = "D:/project/vulkan_engine/media/models/house.obj";
         const std::string TEXTURE_PATH = "D:/project/vulkan_engine/media/revite_textures/Masonry.Stone.Limestone.Rustic.png";
         const std::string SPECULAR_TEXTURE_PATH = "D:/project/vulkan_engine/media/revite_textures/Masonry.Stone.Limestone.Rustic.bump.png";
         const std::string BUMP_TEXTURE_PATH = "D:/project/vulkan_engine/media/revite_textures/Masonry.Stone.Limestone.Rustic.bump-normal.png";

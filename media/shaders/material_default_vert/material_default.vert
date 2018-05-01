@@ -28,12 +28,6 @@ out gl_PerVertex {
     vec4 gl_Position;
 };
 
-const mat4 biasMat = mat4( 
-	0.5, 0.0, 0.0, 0.0,
-	0.0, 0.5, 0.0, 0.0,
-	0.0, 0.0, 1.0, 0.0,
-	0.5, 0.5, 0.0, 1.0 );
-
 // vertex shader
 void main()
 {
@@ -52,5 +46,5 @@ void main()
 	outFragPos = -pos.xyz;
 	outPosition = inPosition;
 
-	outShadowCoord = ( biasMat * ubo.lightSpace * mt.model ) * vec4(inPosition, 1.0);
+	outShadowCoord = ( ubo.lightSpace * mt.model ) * vec4(inPosition, 1.0);
 }
