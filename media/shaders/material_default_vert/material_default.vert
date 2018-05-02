@@ -17,12 +17,12 @@ layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inTexcoord;
 
-layout(location = 1) out smooth vec2 outTexcoord;
-layout(location = 2) out smooth vec3 outNormal;
-layout(location = 3) out smooth vec3 outLightPos;
-layout(location = 4) out smooth vec3 outFragPos;	// out view
-layout(location = 5) out smooth vec3 outPosition;
-layout(location = 6) out smooth vec4 outShadowCoord;
+layout(location = 1) out vec2 outTexcoord;
+layout(location = 2) out vec3 outNormal;
+layout(location = 3) out vec3 outLightPos;
+layout(location = 4) out vec3 outFragPos;	// out view
+layout(location = 5) out vec3 outPosition;
+layout(location = 6) out vec4 outShadowCoord;
 
 out gl_PerVertex {
     vec4 gl_Position;

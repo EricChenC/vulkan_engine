@@ -1705,7 +1705,7 @@ namespace ve {
         UniformMatrixBufferObject umo = {};
 
         // Projection matrix : 45?Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
-        umo.proj = glm::perspective(FoV, 4.0f / 3.0f, 0.1f, 100.0f);
+        umo.proj = glm::perspective(FoV, 4.0f / 3.0f, 0.1f, 1000.0f);
         //ubo.proj[1][1] *= -1;
 
         // Camera matrix
@@ -2222,9 +2222,9 @@ namespace ve {
         // Required to avoid shadow mapping artefacts
         vkCmdSetDepthBias(
             shadowCommandbuffer,
-            4.0f,
+            3.0f,
             0.0f,
-            4.5f);
+            3.8f);
 
         vkCmdBeginRenderPass(shadowCommandbuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -2245,7 +2245,7 @@ namespace ve {
     void VEngine::UpdateShadowUniformBuffer()
     {
         // Matrix from light's point of view
-        glm::mat4 depthProjectionMatrix = glm::perspective(glm::radians(45.0f), 1.0f, 0.001f, 1000.0f);
+        glm::mat4 depthProjectionMatrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 1000.0f);
         glm::mat4 depthViewMatrix = glm::lookAt(lightPos, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0f, 1.0f, 0.0f));
         glm::mat4 depthModelMatrix = glm::mat4();
 
