@@ -119,7 +119,7 @@ void main()
     float shadow = textureProj(outShadowCoord / outShadowCoord.w, vec2(0.0));
     // float shadow = filterPCF(outShadowCoord);
     
-    shadow = max(shadow, 0.4);
+    // shadow = max(shadow, 0.4);
     
     vec3 N = normalize(outNormal);
 	vec3 L = normalize(outLightPos);

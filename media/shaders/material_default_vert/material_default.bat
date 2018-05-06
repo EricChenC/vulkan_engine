@@ -1,1 +1,0 @@
-glslangvalidator -V material_default.vert -o material_default.vert.spv

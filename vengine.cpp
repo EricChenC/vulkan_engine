@@ -692,8 +692,8 @@ namespace ve {
     }
 
     void VEngine::createGraphicsPipeline() {
-        auto vertShaderCode = readFile("D:/project/vulkan_engine/media/shaders/material_default_vert/material_default.vert.spv");
-        auto fragShaderCode = readFile("D:/project/vulkan_engine/media/shaders/revite_default/material_revite_default.frag.spv");
+        auto vertShaderCode = readFile("D:/project/vulkan_engine/media/shaders/shadow.vert.spv");
+        auto fragShaderCode = readFile("D:/project/vulkan_engine/media/shaders/shadow.frag.spv");
 
         VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
         VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
@@ -2070,8 +2070,8 @@ namespace ve {
 
     void VEngine::CreateShadowPipeline()
     {
-        auto vertShaderCode = readFile("D:/project/vulkan_engine/media/shaders/shadow/offscreen.vert.spv");
-        auto fragShaderCode = readFile("D:/project/vulkan_engine/media/shaders/shadow/offscreen.frag.spv");
+        auto vertShaderCode = readFile("D:/project/vulkan_engine/media/shaders/offscreen.vert.spv");
+        auto fragShaderCode = readFile("D:/project/vulkan_engine/media/shaders/offscreen.frag.spv");
 
         VkShaderModule shadowVertShaderModule = createShaderModule(vertShaderCode);
         VkShaderModule shadowFragShaderModule = createShaderModule(fragShaderCode);
