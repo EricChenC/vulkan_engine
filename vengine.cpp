@@ -2245,11 +2245,11 @@ namespace ve {
     void VEngine::UpdateShadowUniformBuffer()
     {
         // Matrix from light's point of view
-        glm::mat4 depthProjectionMatrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 1000.0f);
+        glm::mat4 depthProjectionMatrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
         glm::mat4 depthViewMatrix = glm::lookAt(lightPos, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0f, 1.0f, 0.0f));
         glm::mat4 depthModelMatrix = glm::mat4();
 
-        ubo.depthMVP = depthProjectionMatrix * depthViewMatrix * depthModelMatrix;
+        ubo.depthMVP = clip * depthProjectionMatrix * depthViewMatrix * depthModelMatrix;
 
         void* uboData;
         VK_CHECK_RESULT(vkMapMemory(device, shadowUniformBufferMemory, 0, sizeof(ShadowUBO), 0, &uboData));
