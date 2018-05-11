@@ -455,7 +455,11 @@ namespace ve {
 
         ShadowUBO ubo = {};
 
-        glm::vec3 lightPos = glm::vec3(10.1f, 10.0f, 10.1f);
+        //glm::vec3 lightPos = glm::vec3(10.1f, 10.0f, 10.1f);
+
+        // light direction 
+        glm::vec3 lightPos = glm::vec3(1.1f, 1.0f, 1.1f);
+
 
         glm::mat4 bias = glm::mat4{ 
             0.5, 0.0, 0.0, 0.0,

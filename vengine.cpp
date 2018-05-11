@@ -2248,9 +2248,15 @@ namespace ve {
 
     void VEngine::UpdateShadowUniformBuffer()
     {
-        // Matrix from light's point of view
-        glm::mat4 depthProjectionMatrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
+        // spot light
+        //glm::mat4 depthProjectionMatrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
+        //glm::mat4 depthViewMatrix = glm::lookAt(lightPos, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0f, 1.0f, 0.0f));
+
+        // direction light
+        glm::mat4 depthProjectionMatrix = glm::ortho<float>(-20.0, 20.0, -20.0, 20.0, -20.0, 40.0);
         glm::mat4 depthViewMatrix = glm::lookAt(lightPos, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0f, 1.0f, 0.0f));
+
+
         glm::mat4 depthModelMatrix = glm::mat4();
 
         ubo.depthMVP = clip * depthProjectionMatrix * depthViewMatrix * depthModelMatrix;

@@ -134,7 +134,7 @@ void main()
 	float cosAlpha = clamp( dot( E,R ), 0,1 );
     
     float visibility = 1.0;
-    float bias = 0.005;
+    float bias = 0.01;
     
     for (int i=0;i<4;i++){
 		// use either :
@@ -160,7 +160,7 @@ void main()
             
             if (dist < depth ) 
             {
-                am = 0.5;
+                am = 0.2;
             }
         }
         
