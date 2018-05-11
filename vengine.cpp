@@ -1164,13 +1164,13 @@ namespace ve {
 
                 vertex.pos = {
                     attrib.vertices[3 * index.vertex_index + 0],
-                    -attrib.vertices[3 * index.vertex_index + 1],
+                    attrib.vertices[3 * index.vertex_index + 1],
                     attrib.vertices[3 * index.vertex_index + 2]
                 };
 
                 vertex.normal = {
                     attrib.normals[3 * index.normal_index + 0],
-                    -attrib.normals[3 * index.normal_index + 1],
+                    attrib.normals[3 * index.normal_index + 1],
                     attrib.normals[3 * index.normal_index + 2]
                 };
 
@@ -1208,7 +1208,7 @@ namespace ve {
 
                 vertex.pos = {
                     attrib.vertices[3 * index.vertex_index + 0],
-                    -attrib.vertices[3 * index.vertex_index + 1],
+                    attrib.vertices[3 * index.vertex_index + 1],
                     attrib.vertices[3 * index.vertex_index + 2]
                 };
 
@@ -1642,7 +1642,7 @@ namespace ve {
 
             // Compute new orientation
             horizontalAngle += mouseSpeed * float(last_xpos_ - xpos);
-            verticalAngle -= mouseSpeed * float(last_ypos_ - ypos);
+            verticalAngle += mouseSpeed * float(last_ypos_ - ypos);
 
             last_xpos_ = xpos;
             last_ypos_ = ypos;
@@ -1687,11 +1687,11 @@ namespace ve {
         }
         // Strafe up
         if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-            position.y -= 2 * deltaTime * speed;
+            position.y += 2 * deltaTime * speed;
         }
         // Strafe down
         if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
-            position.y += 2 * deltaTime * speed;
+            position.y -= 2 * deltaTime * speed;
         }
 
         // Strafe down
@@ -1705,7 +1705,7 @@ namespace ve {
         UniformMatrixBufferObject umo = {};
 
         // Projection matrix : 45?Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
-        umo.proj = glm::perspective(FoV, 4.0f / 3.0f, 0.1f, 1000.0f);
+        umo.proj = clip * glm::perspective(FoV, 4.0f / 3.0f, 0.1f, 1000.0f);
         //ubo.proj[1][1] *= -1;
 
         // Camera matrix
@@ -1872,6 +1872,10 @@ namespace ve {
         sampler.minLod = 0.0f;
         sampler.maxLod = 1.0f;
         sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+      /*  sampler.compareEnable = VK_TRUE;
+        sampler.compareOp = VK_COMPARE_OP_LESS;*/
+
+
         VK_CHECK_RESULT(vkCreateSampler(device, &sampler, nullptr, &shadowImageSampler));
 
         // Create frame buffer
