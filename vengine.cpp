@@ -1864,13 +1864,13 @@ namespace ve {
         sampler.magFilter = SHADOWMAP_FILTER;
         sampler.minFilter = SHADOWMAP_FILTER;
         sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-        sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
         sampler.addressModeV = sampler.addressModeU;
         sampler.addressModeW = sampler.addressModeU;
         sampler.mipLodBias = 0.0f;
-        sampler.maxAnisotropy = 1.0f;
+        sampler.maxAnisotropy = 10.0f;
         sampler.minLod = 0.0f;
-        sampler.maxLod = 1.0f;
+        sampler.maxLod = 10.0f;
         sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
       /*  sampler.compareEnable = VK_TRUE;
         sampler.compareOp = VK_COMPARE_OP_LESS;*/
@@ -2249,11 +2249,11 @@ namespace ve {
     void VEngine::UpdateShadowUniformBuffer()
     {
         // spot light
-        //glm::mat4 depthProjectionMatrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
-        //glm::mat4 depthViewMatrix = glm::lookAt(lightPos, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0f, 1.0f, 0.0f));
+     /*   glm::mat4 depthProjectionMatrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
+        glm::mat4 depthViewMatrix = glm::lookAt(lightPos, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0f, 1.0f, 0.0f));*/
 
         // direction light
-        glm::mat4 depthProjectionMatrix = glm::ortho<float>(-20.0, 20.0, -20.0, 20.0, -20.0, 40.0);
+        glm::mat4 depthProjectionMatrix = glm::ortho<float>(-40.0, -10.0, -20.0, 20.0, -20.0, 40.0);
         glm::mat4 depthViewMatrix = glm::lookAt(lightPos, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0f, 1.0f, 0.0f));
 
 

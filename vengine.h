@@ -439,7 +439,7 @@ namespace ve {
         const int HEIGHT = 600;
 
         // Initial position : on +Z
-        glm::vec3 position = glm::vec3(0, 2, 10);
+        glm::vec3 position = glm::vec3(0, 5, 10);
         // Initial horizontal angle : toward -Z
         float horizontalAngle = 3.14f;
         // Initial vertical angle : none
@@ -458,7 +458,7 @@ namespace ve {
         //glm::vec3 lightPos = glm::vec3(10.1f, 10.0f, 10.1f);
 
         // light direction 
-        glm::vec3 lightPos = glm::vec3(1.1f, 1.0f, 1.1f);
+        glm::vec3 lightPos = glm::vec3(1.0f, 1.0f, 0.001f);
 
 
         glm::mat4 bias = glm::mat4{ 
