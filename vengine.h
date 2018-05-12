@@ -43,8 +43,6 @@ namespace ve {
         void AddUniformBufferAndMemory(const VkBuffer& uniform_buffer, const VkDeviceMemory& uniform_buffer_memory);
 
     protected:
-        virtual void Draw();
-
         virtual void Clear();
 
         void CreateTexture(const std::string& texture_path, VkImage& texture, VkDeviceMemory& texture_memory);
@@ -66,7 +64,6 @@ namespace ve {
         void cleanup();
         void recreateSwapChain();
         void createInstance();
-        void setupDebugCallback();
         void createSurface();
         void pickPhysicalDevice();
         void createLogicalDevice();

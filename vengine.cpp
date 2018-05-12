@@ -24,34 +24,11 @@ namespace std {
     };
 }
 
-VkResult CreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback) {
-    auto func = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT");
-    if (func != nullptr) {
-        return func(instance, pCreateInfo, pAllocator, pCallback);
-    }
-    else {
-        return VK_ERROR_EXTENSION_NOT_PRESENT;
-    }
-}
-
-void DestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT callback, const VkAllocationCallbacks* pAllocator) {
-    auto func = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugReportCallbackEXT");
-    if (func != nullptr) {
-        func(instance, callback, pAllocator);
-    }
-}
-
 static void onWindowResized(GLFWwindow* window, int width, int height) {
     if (width == 0 || height == 0) return;
 
     ve::VEngine* app = reinterpret_cast<ve::VEngine*>(glfwGetWindowUserPointer(window));
     app->recreateSwapChain();
-}
-
-static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objType, uint64_t obj, size_t location, int32_t code, const char* layerPrefix, const char* msg, void* userData) {
-    std::cerr << "validation layer: " << msg << std::endl;
-
-    return VK_FALSE;
 }
 
 namespace ve {
@@ -63,24 +40,6 @@ namespace ve {
     {
     }
 
-   /* void VEngine::Run()
-    {
-        std::cout << "engine is runing!\n";
-
-       
-
-        Draw();
-    }*/
-
-    void VEngine::Draw()
-    {
-        std::cout << "draw the scene\n";
-
-        // vkCmdDraw
-        // vkCmdDrawIndexed
-        // vkCmdDrawIndirect
-        // vkCmdDrawIndexedIndirect
-    }
 
     void VEngine::Clear()
     {
@@ -226,7 +185,6 @@ namespace ve {
         vkDestroyCommandPool(device, commandPool, nullptr);
 
         vkDestroyDevice(device, nullptr);
-        DestroyDebugReportCallbackEXT(instance, callback, nullptr);
         vkDestroySurfaceKHR(instance, surface, nullptr);
         vkDestroyInstance(instance, nullptr);
 
@@ -258,7 +216,6 @@ namespace ve {
 
     void VEngine::initVulkan() {
         createInstance();
-        setupDebugCallback();
         createSurface();
         pickPhysicalDevice();
         createLogicalDevice();
@@ -387,18 +344,7 @@ namespace ve {
         }
     }
 
-    void VEngine::setupDebugCallback() {
-        if (!enableValidationLayers) return;
 
-        VkDebugReportCallbackCreateInfoEXT createInfo = {};
-        createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
-        createInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
-        createInfo.pfnCallback = debugCallback;
-
-        if (CreateDebugReportCallbackEXT(instance, &createInfo, nullptr, &callback) != VK_SUCCESS) {
-            throw std::runtime_error("failed to set up debug callback!");
-        }
-    }
 
     void VEngine::createSurface() {
         if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
