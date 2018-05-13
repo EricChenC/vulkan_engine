@@ -106,7 +106,6 @@ namespace ve {
         void CreateShadowPipeline();
         void CreateShadowCommandBuffer();
 
-        void UpdateShadowUniformBuffer();
 
     public:
         struct UniformMatrixBufferObject {
@@ -280,6 +279,8 @@ namespace ve {
         bool checkValidationLayerSupport();
         std::vector<char> readFile(const std::string& filename);
 
+        glm::mat4 GetOrthoMatrix(float left, float right, float bottom, float top, float near, float far);
+
     private:
         GLFWwindow* window;
 
@@ -436,7 +437,7 @@ namespace ve {
         const int HEIGHT = 600;
 
         // Initial position : on +Z
-        glm::vec3 position = glm::vec3(0, 5, 10);
+        glm::vec3 position = glm::vec3(0.01, 2, 10.01);
         // Initial horizontal angle : toward -Z
         float horizontalAngle = 3.14f;
         // Initial vertical angle : none
@@ -444,7 +445,7 @@ namespace ve {
         // Initial Field of View
         float initialFoV = 45.0f;
 
-        float speed = 3.0f; // 3 units / second
+        float speed = 10.0f; // 3 units / second
         float mouseSpeed = 0.005f;
 
         double last_xpos_ = 0.0f;

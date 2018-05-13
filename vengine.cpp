@@ -1654,12 +1654,52 @@ namespace ve {
         umo.proj = clip * glm::perspective(FoV, 4.0f / 3.0f, 0.1f, 1000.0f);
         //ubo.proj[1][1] *= -1;
 
+
+        auto camera_point = position + direction;
+
         // Camera matrix
         umo.view = glm::lookAt(
             position,           // Camera is here
-            position + direction, // and looks here : at the same position, plus "direction"
+            camera_point,       // and looks here : at the same position, plus "direction"
             up                  // Head is up (set to 0,-1,0 to look upside-down)
         );
+
+
+        /*auto camera_direction = -direction;
+        auto light_direction = -lightPos;
+
+        auto r_plane = glm::normalize(glm::cross(light_direction, camera_direction));
+        auto l_plane = glm::normalize(glm::cross(camera_direction, light_direction));
+
+        auto up_plane = glm::normalize(glm::cross(r_plane, light_direction));
+        auto down_plane = glm::normalize(glm::cross(light_direction, r_plane));
+
+
+        auto  = camera_point * r_plane;*/
+
+
+
+
+
+
+        // spot light
+        /*   glm::mat4 depthProjectionMatrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
+        glm::mat4 depthViewMatrix = glm::lookAt(lightPos, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0f, 1.0f, 0.0f));*/
+
+
+        // direction light
+
+        glm::mat4 depthProjectionMatrix = glm::ortho<float>(20.0, -20.0, -20.0, 20.0, -20.0, 40.0);
+        glm::mat4 depthViewMatrix = glm::lookAt(lightPos, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0f, 1.0f, 0.0f));
+
+        glm::mat4 depthModelMatrix = glm::translate(glm::mat4(1.0), -camera_point);
+
+        ubo.depthMVP = clip * depthProjectionMatrix * depthViewMatrix * depthModelMatrix;
+
+        void* uboData;
+        VK_CHECK_RESULT(vkMapMemory(device, shadowUniformBufferMemory, 0, sizeof(ShadowUBO), 0, &uboData));
+        memcpy(uboData, &ubo.depthMVP, sizeof(ShadowUBO));
+        vkUnmapMemory(device, shadowUniformBufferMemory);
 
         umo.lightSpace = bias * ubo.depthMVP;
 
@@ -1968,8 +2008,6 @@ namespace ve {
     void VEngine::CreateShadowUniformBuffer()
     {
         createBuffer(sizeof(ShadowUBO), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, shadowUniformBuffer, shadowUniformBufferMemory);
-
-        UpdateShadowUniformBuffer();
     }
 
     void VEngine::CreateShadowDescriptorPool()
@@ -2115,7 +2153,6 @@ namespace ve {
 
         VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &shadowPipeline)); 
 
-
         vkDestroyShaderModule(device, shadowFragShaderModule, nullptr);
         vkDestroyShaderModule(device, shadowVertShaderModule, nullptr);
 
@@ -2190,27 +2227,6 @@ namespace ve {
 
         VK_CHECK_RESULT(vkEndCommandBuffer(shadowCommandbuffer));
 
-    }
-
-    void VEngine::UpdateShadowUniformBuffer()
-    {
-        // spot light
-     /*   glm::mat4 depthProjectionMatrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
-        glm::mat4 depthViewMatrix = glm::lookAt(lightPos, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0f, 1.0f, 0.0f));*/
-
-        // direction light
-        glm::mat4 depthProjectionMatrix = glm::ortho<float>(-40.0, -10.0, -20.0, 20.0, -20.0, 40.0);
-        glm::mat4 depthViewMatrix = glm::lookAt(lightPos, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0f, 1.0f, 0.0f));
-
-
-        glm::mat4 depthModelMatrix = glm::mat4();
-
-        ubo.depthMVP = clip * depthProjectionMatrix * depthViewMatrix * depthModelMatrix;
-
-        void* uboData;
-        VK_CHECK_RESULT(vkMapMemory(device, shadowUniformBufferMemory, 0, sizeof(ShadowUBO), 0, &uboData));
-        memcpy(uboData, &ubo.depthMVP, sizeof(ShadowUBO));
-        vkUnmapMemory(device, shadowUniformBufferMemory);
     }
 
     VkShaderModule VEngine::createShaderModule(const std::vector<char>& code) {
@@ -2424,6 +2440,22 @@ namespace ve {
         file.close();
 
         return buffer;
+    }
+
+    glm::mat4 VEngine::GetOrthoMatrix(float left, float right, float bottom, float top, float near, float far)
+    {
+        glm::mat4 ortho = glm::mat4{
+            2.0f / (right - left), 0.0f, 0.0f, 0.0f,
+            0.0f, 2.0f / (bottom - top), 0.0f, 0.0f,
+            0.0f, 0.0f, 1.0f / (near - far), 0.0f,
+
+            -(right + left) / (right - left),
+            -(bottom + top) / (bottom - top),
+            near / (near - far),
+            1.0f
+        };
+
+        return ortho;
     }
 
 
