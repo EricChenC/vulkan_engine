@@ -78,7 +78,6 @@ namespace ve {
         void SetTextureInfo();
 
         void loadModel();
-        void loadShadowModel();
         void createVertexBuffer();
         void createIndexBuffer();
         void createUniformBuffer();
@@ -480,7 +479,6 @@ namespace ve {
 
         // version 2
         const std::string MODEL_PATH = "D:/project/vulkan_engine/media/models/shadow.obj";
-        const std::string SHADOW_MODEL_PATH = "D:/project/vulkan_engine/media/models/shadow.obj";
         const std::string TEXTURE_PATH = "D:/project/vulkan_engine/media/revite_textures/Masonry.Stone.Limestone.Rustic.png";
         const std::string SPECULAR_TEXTURE_PATH = "D:/project/vulkan_engine/media/revite_textures/Masonry.Stone.Limestone.Rustic.bump.png";
         const std::string BUMP_TEXTURE_PATH = "D:/project/vulkan_engine/media/revite_textures/Masonry.Stone.Limestone.Rustic.bump-normal.png";

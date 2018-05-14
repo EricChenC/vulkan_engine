@@ -196,7 +196,6 @@ namespace ve {
     void VEngine::Run()
     {
         loadModel();
-        loadShadowModel();
         initWindow();
         initVulkan();
         mainLoop();
@@ -1103,16 +1102,21 @@ namespace ve {
         }
 
         std::unordered_map<Vertex, uint32_t> uniqueVertices = {};
+        std::unordered_map<ShadowVertex, uint32_t> uniqueShadowVertices = {};
 
         for (const auto& shape : shapes) {
             for (const auto& index : shape.mesh.indices) {
                 Vertex vertex = {};
+                ShadowVertex shadowVertex = {};
 
-                vertex.pos = {
+                glm::vec3 pos = glm::vec3{
                     attrib.vertices[3 * index.vertex_index + 0],
                     attrib.vertices[3 * index.vertex_index + 1],
                     attrib.vertices[3 * index.vertex_index + 2]
                 };
+
+                vertex.pos = pos;
+                shadowVertex.pos = pos;
 
                 vertex.normal = {
                     attrib.normals[3 * index.normal_index + 0],
@@ -1128,45 +1132,16 @@ namespace ve {
                 if (uniqueVertices.count(vertex) == 0) {
                     uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
                     vertices.push_back(vertex);
+                    shadowVertices.push_back(shadowVertex);
                 }
 
                 indices.push_back(uniqueVertices[vertex]);
-            }
-        }
-    }
-
-    void VEngine::loadShadowModel()
-    {
-        tinyobj::attrib_t attrib;
-        std::vector<tinyobj::shape_t> shapes;
-        std::vector<tinyobj::material_t> materials;
-        std::string err;
-
-        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, SHADOW_MODEL_PATH.c_str())) {
-            throw std::runtime_error(err);
-        }
-
-        std::unordered_map<ShadowVertex, uint32_t> uniqueVertices = {};
-
-        for (const auto& shape : shapes) {
-            for (const auto& index : shape.mesh.indices) {
-                ShadowVertex vertex = {};
-
-                vertex.pos = {
-                    attrib.vertices[3 * index.vertex_index + 0],
-                    attrib.vertices[3 * index.vertex_index + 1],
-                    attrib.vertices[3 * index.vertex_index + 2]
-                };
-
-                if (uniqueVertices.count(vertex) == 0) {
-                    uniqueVertices[vertex] = static_cast<uint32_t>(shadowVertices.size());
-                    shadowVertices.push_back(vertex);
-                }
-
                 shadowIndices.push_back(uniqueVertices[vertex]);
+
             }
         }
     }
+
 
     void VEngine::createVertexBuffer() {
         VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
@@ -1651,7 +1626,7 @@ namespace ve {
         UniformMatrixBufferObject umo = {};
 
         auto camera_near = 0.1f;
-        auto camera_far = 1000.0f;
+        auto camera_far = 50.0f;
 
         // Projection matrix : 45?Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
         umo.proj = clip * glm::perspective(FoV, 4.0f / 3.0f, camera_near, camera_far);
