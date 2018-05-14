@@ -1650,8 +1650,11 @@ namespace ve {
 
         UniformMatrixBufferObject umo = {};
 
+        auto camera_near = 0.1f;
+        auto camera_far = 1000.0f;
+
         // Projection matrix : 45?Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
-        umo.proj = clip * glm::perspective(FoV, 4.0f / 3.0f, 0.1f, 1000.0f);
+        umo.proj = clip * glm::perspective(FoV, 4.0f / 3.0f, camera_near, camera_far);
         //ubo.proj[1][1] *= -1;
 
 
@@ -1678,21 +1681,91 @@ namespace ve {
         auto  = camera_point * r_plane;*/
 
 
-
-
-
-
         // spot light
         /*   glm::mat4 depthProjectionMatrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
         glm::mat4 depthViewMatrix = glm::lookAt(lightPos, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0f, 1.0f, 0.0f));*/
 
 
+        float cascadeSplitLambda = 0.95f;
+
+        float cascadeSplits[1];
+
+        float nearClip = camera_near;
+        float farClip = camera_far * 0.05;
+        float clipRange = farClip - nearClip;
+
+        float minZ = nearClip;
+        float maxZ = nearClip + clipRange;
+
+        float range = maxZ - minZ;
+        float ratio = maxZ / minZ;
+
+        float p = (1) / static_cast<float>(1);
+        float log = minZ * std::pow(ratio, p);
+        float uniform = minZ + range * p;
+        float d = cascadeSplitLambda * (log - uniform) + uniform;
+        cascadeSplits[0] = (d - nearClip) / clipRange;
+
+        // Calculate orthographic projection matrix for each cascade
+        float lastSplitDist = 0.0;
+        float splitDist = cascadeSplits[0];
+
+        glm::vec3 frustumCorners[8] = {
+            glm::vec3(-1.0f,  1.0f, -1.0f),
+            glm::vec3(1.0f,  1.0f, -1.0f),
+            glm::vec3(1.0f, -1.0f, -1.0f),
+            glm::vec3(-1.0f, -1.0f, -1.0f),
+            glm::vec3(-1.0f,  1.0f,  1.0f),
+            glm::vec3(1.0f,  1.0f,  1.0f),
+            glm::vec3(1.0f, -1.0f,  1.0f),
+            glm::vec3(-1.0f, -1.0f,  1.0f),
+        };
+
+        // Project frustum corners into world space
+        glm::mat4 invCam = glm::inverse(umo.proj * umo.view);
+        for (uint32_t i = 0; i < 8; i++) {
+            glm::vec4 invCorner = invCam * glm::vec4(frustumCorners[i], 1.0f);
+            frustumCorners[i] = invCorner / invCorner.w;
+        }
+
+        for (uint32_t i = 0; i < 4; i++) {
+            glm::vec3 dist = frustumCorners[i + 4] - frustumCorners[i];
+            frustumCorners[i + 4] = frustumCorners[i] + (dist * splitDist);
+            frustumCorners[i] = frustumCorners[i] + (dist * lastSplitDist);
+        }
+
+        // Get frustum center
+        glm::vec3 frustumCenter = glm::vec3(0.0f);
+        for (uint32_t i = 0; i < 8; i++) {
+            frustumCenter += frustumCorners[i];
+        }
+        frustumCenter /= 8.0f;
+
+        //frustumCenter *= 0.02f;
+
+        float radius = 0.0f;
+        for (uint32_t i = 0; i < 8; i++) {
+            float distance = glm::length(frustumCorners[i] - frustumCenter);
+            radius = glm::max(radius, distance);
+        }
+        radius = std::ceil(radius * 16.0f) / 16.0f;
+
+        glm::vec3 maxExtents = glm::vec3(radius);
+        glm::vec3 minExtents = -maxExtents;
+
+        glm::vec3 lightDir = normalize(-lightPos);
+        glm::mat4 depthViewMatrix = glm::lookAt(frustumCenter - lightDir * -minExtents.z, frustumCenter, glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 depthProjectionMatrix = glm::ortho(minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, 0.0f, maxExtents.z - minExtents.z);
+
+
         // direction light
 
-        glm::mat4 depthProjectionMatrix = glm::ortho<float>(20.0, -20.0, -20.0, 20.0, -20.0, 40.0);
-        glm::mat4 depthViewMatrix = glm::lookAt(lightPos, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0f, 1.0f, 0.0f));
+        /*glm::mat4 depthProjectionMatrix = glm::ortho<float>(20.0, -20.0, -20.0, 20.0, -20.0, 40.0);
+        glm::mat4 depthViewMatrix = glm::lookAt(lightPos, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0f, 1.0f, 0.0f));*/
 
-        glm::mat4 depthModelMatrix = glm::translate(glm::mat4(1.0), -camera_point);
+        //glm::mat4 depthModelMatrix = glm::translate(glm::mat4(1.0), -camera_point);
+
+        glm::mat4 depthModelMatrix = glm::mat4(1.0);
 
         ubo.depthMVP = clip * depthProjectionMatrix * depthViewMatrix * depthModelMatrix;
 
@@ -2168,7 +2241,7 @@ namespace ve {
         allocInfo.commandBufferCount = 1;
 
         VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &allocInfo, &shadowCommandbuffer));
-       
+        
         VkCommandBufferBeginInfo cmdBufInfo = {};
         cmdBufInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         //cmdBufInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
