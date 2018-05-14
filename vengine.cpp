@@ -40,13 +40,13 @@ namespace ve {
     {
     }
 
-
-    void VEngine::Clear()
+    void VEngine::Run()
     {
-        for (int index = 0; index < uniform_buffers_.size(); index++) {
-            vkDestroyBuffer(logic_device_, uniform_buffers_[index], nullptr);
-            vkFreeMemory(logic_device_, uniform_buffer_memorys_[index], nullptr);
-        }
+        loadModel();
+        initWindow();
+        initVulkan();
+        mainLoop();
+        cleanup();
     }
 
     void VEngine::CreateTexture(const std::string & texture_path, VkImage& texture, VkDeviceMemory& texture_memory)
@@ -107,26 +107,8 @@ namespace ve {
         }
     }
 
-    void VEngine::AddScene(const ve::VScene & scene)
-    {
-        std::cout << "add a scene to engine!\n";
 
-        std::array<VkWriteDescriptorSet, 7> descriptorWrites = {};
-
-    }
-
-    const VkDevice VEngine::get_logic_device()
-    {
-        return logic_device_;
-    }
-
-    void VEngine::AddUniformBufferAndMemory(const VkBuffer & uniform_buffer, const VkDeviceMemory & uniform_buffer_memory)
-    {
-        uniform_buffers_.push_back(uniform_buffer);
-        uniform_buffer_memorys_.push_back(uniform_buffer_memory);
-    }
-
-
+ 
     void VEngine::cleanup() {
         cleanupSwapChain();
 
@@ -150,18 +132,6 @@ namespace ve {
 
         vkDestroyBuffer(device, uniformMatrixBuffer, nullptr);
         vkFreeMemory(device, uniformMatrixBufferMemory, nullptr);
-
-        vkDestroyBuffer(device, uniformNormalBuffer, nullptr);
-        vkFreeMemory(device, uniformNormalBufferMemory, nullptr);
-
-        vkDestroyBuffer(device, uniformNormalTextureBuffer, nullptr);
-        vkFreeMemory(device, uniformNormalTextureBufferMemory, nullptr);
-
-        vkDestroyBuffer(device, uniformSpecialBuffer, nullptr);
-        vkFreeMemory(device, uniformSpecialBufferMemory, nullptr);
-
-        vkDestroyBuffer(device, uniformSpecialTextureBuffer, nullptr);
-        vkFreeMemory(device, uniformSpecialTextureBufferMemory, nullptr);
 
         vkDestroyBuffer(device, indexBuffer, nullptr);
         vkFreeMemory(device, indexBufferMemory, nullptr);
@@ -191,15 +161,6 @@ namespace ve {
         glfwDestroyWindow(window);
 
         glfwTerminate();
-    }
-
-    void VEngine::Run()
-    {
-        loadModel();
-        initWindow();
-        initVulkan();
-        mainLoop();
-        cleanup();
     }
 
     void VEngine::initWindow() {
@@ -239,7 +200,6 @@ namespace ve {
 
         createDescriptorSetLayout();
         createGraphicsPipeline();
-        SetTextureInfo();
         createVertexBuffer();
         createIndexBuffer();
         createUniformBuffer();
@@ -880,54 +840,6 @@ namespace ve {
         }
     }
 
-    void VEngine::SetTextureInfo()
-    {
-
-        TextureInfo diffuse_info = {
-            TEXTURE_PATH,
-            &diffuseTexture,
-            &diffuseTextureMemory,
-            &diffuseTextureView,
-            &diffuseTextureSampler
-        };
-
-        TextureInfo specular_info = {
-            SPECULAR_TEXTURE_PATH,
-            &specularTexture,
-            &specularTextureMemory,
-            &specularTextureView,
-            &specularTextureSampler
-        };
-
-        TextureInfo bump_info = {
-            BUMP_TEXTURE_PATH,
-            &bumpTexture,
-            &bumpTextureMemory,
-            &bumpTextureView,
-            &bumpTextureSampler
-        };
-
-        TextureInfo cutoff_info = {
-            CUTOFF_TEXTURE_PATH,
-            &cutoffTexture,
-            &cutoffTextureMemory,
-            &cutoffTextureView,
-            &cutoffTextureSampler
-        };
-
-        texture_infos_.push_back(diffuse_info);
-        texture_infos_.push_back(specular_info);
-        texture_infos_.push_back(bump_info);
-        texture_infos_.push_back(cutoff_info);
-
-        for (auto info = texture_infos_.begin(); info != texture_infos_.end(); ++info) {
-            CreateTexture(info->texture_path, *info->texture, *info->texture_memory);
-            CreateTextureView(*info->texture_view, *info->texture);
-            CreateTextureSampler(*info->sampler);
-        }
-
-    }
-
     VkBool32 VEngine::findDepthFormat(VkPhysicalDevice physicalDevice, VkFormat *depthFormat) {
         // Since all depth formats may be optional, we need to find a suitable depth format to use
         // Start with the highest precision packed format
@@ -1187,10 +1099,6 @@ namespace ve {
 
     void VEngine::createUniformBuffer() {
         createBuffer(sizeof(UniformMatrixBufferObject), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformMatrixBuffer, uniformMatrixBufferMemory);
-        createBuffer(sizeof(UniformNormalParameters), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformNormalBuffer, uniformNormalBufferMemory);
-        createBuffer(sizeof(UniformNormalTextureParameters), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformNormalTextureBuffer, uniformNormalTextureBufferMemory);
-        createBuffer(sizeof(UniformSpecialParameters), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformSpecialBuffer, uniformSpecialBufferMemory);
-        createBuffer(sizeof(UniformSpecialTextureParameters), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformSpecialTextureBuffer, uniformSpecialTextureBufferMemory);
     }
 
     void VEngine::createDescriptorPool() {
@@ -1253,46 +1161,6 @@ namespace ve {
         matrixBufferInfo.offset = 0;
         matrixBufferInfo.range = sizeof(UniformMatrixBufferObject);
 
-        VkDescriptorBufferInfo normalBufferInfo = {};
-        normalBufferInfo.buffer = uniformNormalBuffer;
-        normalBufferInfo.offset = 0;
-        normalBufferInfo.range = sizeof(UniformNormalParameters);
-
-        VkDescriptorBufferInfo normalTextureBufferInfo = {};
-        normalTextureBufferInfo.buffer = uniformNormalTextureBuffer;
-        normalTextureBufferInfo.offset = 0;
-        normalTextureBufferInfo.range = sizeof(UniformNormalTextureParameters);
-
-        VkDescriptorBufferInfo specialBufferInfo = {};
-        specialBufferInfo.buffer = uniformSpecialBuffer;
-        specialBufferInfo.offset = 0;
-        specialBufferInfo.range = sizeof(UniformSpecialParameters);
-
-        VkDescriptorBufferInfo specialTextureBufferInfo = {};
-        specialTextureBufferInfo.buffer = uniformSpecialTextureBuffer;
-        specialTextureBufferInfo.offset = 0;
-        specialTextureBufferInfo.range = sizeof(UniformSpecialTextureParameters);
-
-        VkDescriptorImageInfo diffuseTextureInfo = {};
-        diffuseTextureInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        diffuseTextureInfo.imageView = diffuseTextureView;
-        diffuseTextureInfo.sampler = diffuseTextureSampler;
-
-        VkDescriptorImageInfo specularTextureInfo = {};
-        specularTextureInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        specularTextureInfo.imageView = specularTextureView;
-        specularTextureInfo.sampler = specularTextureSampler;
-
-        VkDescriptorImageInfo bumpTextureInfo = {};
-        bumpTextureInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        bumpTextureInfo.imageView = bumpTextureView;
-        bumpTextureInfo.sampler = bumpTextureSampler;
-
-        VkDescriptorImageInfo cutoffTextureInfo = {};
-        cutoffTextureInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        cutoffTextureInfo.imageView = cutoffTextureView;
-        cutoffTextureInfo.sampler = cutoffTextureSampler;
-
         VkDescriptorImageInfo shadowMapTextureInfo = {};
         shadowMapTextureInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         shadowMapTextureInfo.imageView = shadowImageView;
@@ -1308,70 +1176,6 @@ namespace ve {
         descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         descriptorWrites[0].descriptorCount = 1;
         descriptorWrites[0].pBufferInfo = &matrixBufferInfo;
-
-        descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[1].dstSet = descriptorSet;
-        descriptorWrites[1].dstBinding = 1;
-        descriptorWrites[1].dstArrayElement = 0;
-        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrites[1].descriptorCount = 1;
-        descriptorWrites[1].pBufferInfo = &normalBufferInfo;
-
-        descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[2].dstSet = descriptorSet;
-        descriptorWrites[2].dstBinding = 2;
-        descriptorWrites[2].dstArrayElement = 0;
-        descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrites[2].descriptorCount = 1;
-        descriptorWrites[2].pBufferInfo = &normalTextureBufferInfo;
-
-        descriptorWrites[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[3].dstSet = descriptorSet;
-        descriptorWrites[3].dstBinding = 6;
-        descriptorWrites[3].dstArrayElement = 0;
-        descriptorWrites[3].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrites[3].descriptorCount = 1;
-        descriptorWrites[3].pBufferInfo = &specialBufferInfo;
-
-        descriptorWrites[4].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[4].dstSet = descriptorSet;
-        descriptorWrites[4].dstBinding = 7;
-        descriptorWrites[4].dstArrayElement = 0;
-        descriptorWrites[4].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrites[4].descriptorCount = 1;
-        descriptorWrites[4].pBufferInfo = &specialTextureBufferInfo;
-
-        descriptorWrites[5].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[5].dstSet = descriptorSet;
-        descriptorWrites[5].dstBinding = 3;
-        descriptorWrites[5].dstArrayElement = 0;
-        descriptorWrites[5].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[5].descriptorCount = 1;
-        descriptorWrites[5].pImageInfo = &diffuseTextureInfo;
-
-        descriptorWrites[6].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[6].dstSet = descriptorSet;
-        descriptorWrites[6].dstBinding = 4;
-        descriptorWrites[6].dstArrayElement = 0;
-        descriptorWrites[6].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[6].descriptorCount = 1;
-        descriptorWrites[6].pImageInfo = &specularTextureInfo;
-
-        descriptorWrites[7].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[7].dstSet = descriptorSet;
-        descriptorWrites[7].dstBinding = 5;
-        descriptorWrites[7].dstArrayElement = 0;
-        descriptorWrites[7].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[7].descriptorCount = 1;
-        descriptorWrites[7].pImageInfo = &bumpTextureInfo;
-
-        descriptorWrites[8].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[8].dstSet = descriptorSet;
-        descriptorWrites[8].dstBinding = 8;
-        descriptorWrites[8].dstArrayElement = 0;
-        descriptorWrites[8].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[8].descriptorCount = 1;
-        descriptorWrites[8].pImageInfo = &cutoffTextureInfo;
 
         descriptorWrites[9].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[9].dstSet = descriptorSet;
@@ -1489,47 +1293,7 @@ namespace ve {
     }
 
     void VEngine::updateUniformBuffer() {
-        
         camera_control();
-
-        UniformNormalParameters unp = {};
-        unp.diffuseColor = glm::vec4(1.0f);
-        unp.specularColor = glm::vec4(0.7f, 0.7f, 0.7f, 1.0f);
-        unp.diffuseRough = 0.95f;
-        unp.shininess = 40.0f;
-        unp.reflectivity = 0.2f;
-
-        void* normalData;
-        vkMapMemory(device, uniformNormalBufferMemory, 0, sizeof(unp), 0, &normalData);
-        memcpy(normalData, &unp, sizeof(unp));
-        vkUnmapMemory(device, uniformNormalBufferMemory);
-
-        UniformNormalTextureParameters untp = {};
-        untp.diffuseOffset = glm::vec2(0.0f, 0.0f);
-        untp.diffuseRepeat = glm::vec2(1.0f, 1.0f);
-        untp.specularOffset = glm::vec2(0.0f, 0.0f);
-        untp.specularRepeat = glm::vec2(1.0f, 1.0f);
-
-        void* normalTextureData;
-        vkMapMemory(device, uniformNormalTextureBufferMemory, 0, sizeof(untp), 0, &normalTextureData);
-        memcpy(normalTextureData, &untp, sizeof(untp));
-        vkUnmapMemory(device, uniformNormalTextureBufferMemory);
-
-        UniformSpecialParameters usp = {};
-        usp.cutOff = 0.05f;
-
-        void* specialData;
-        vkMapMemory(device, uniformSpecialBufferMemory, 0, sizeof(usp), 0, &specialData);
-        memcpy(specialData, &usp, sizeof(usp));
-        vkUnmapMemory(device, uniformSpecialBufferMemory);
-
-        UniformSpecialTextureParameters ustp = {};
-
-        void* specialTextureData;
-        vkMapMemory(device, uniformSpecialTextureBufferMemory, 0, sizeof(ustp), 0, &specialTextureData);
-        memcpy(specialTextureData, &ustp, sizeof(ustp));
-        vkUnmapMemory(device, uniformSpecialTextureBufferMemory);
-
     }
 
     void VEngine::camera_control()
@@ -2489,25 +2253,6 @@ namespace ve {
 
         return buffer;
     }
-
-    glm::mat4 VEngine::GetOrthoMatrix(float left, float right, float bottom, float top, float near, float far)
-    {
-        glm::mat4 ortho = glm::mat4{
-            2.0f / (right - left), 0.0f, 0.0f, 0.0f,
-            0.0f, 2.0f / (bottom - top), 0.0f, 0.0f,
-            0.0f, 0.0f, 1.0f / (near - far), 0.0f,
-
-            -(right + left) / (right - left),
-            -(bottom + top) / (bottom - top),
-            near / (near - far),
-            1.0f
-        };
-
-        return ortho;
-    }
-
-
-
 
     
 }

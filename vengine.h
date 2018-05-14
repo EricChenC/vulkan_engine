@@ -36,25 +36,15 @@ namespace ve {
         explicit VEngine();
         ~VEngine();
 
-        virtual void Run();
-        virtual void AddScene(const ve::VScene& scene);
-
-        const VkDevice get_logic_device();
-        void AddUniformBufferAndMemory(const VkBuffer& uniform_buffer, const VkDeviceMemory& uniform_buffer_memory);
+        void Run();
 
     protected:
-        virtual void Clear();
-
         void CreateTexture(const std::string& texture_path, VkImage& texture, VkDeviceMemory& texture_memory);
         void CreateTextureView(VkImageView& view, VkImage& texture);
         void CreateTextureSampler(VkSampler& sampler);
 
     private:
         VkDevice logic_device_;
-
-        std::vector<VkBuffer> uniform_buffers_;
-        std::vector<VkDeviceMemory> uniform_buffer_memorys_;
-
 
     public:
         void initWindow();
@@ -74,8 +64,6 @@ namespace ve {
         void createGraphicsPipeline();
         void createFramebuffers();
         void createCommandPool();
-
-        void SetTextureInfo();
 
         void loadModel();
         void createVertexBuffer();
@@ -118,51 +106,14 @@ namespace ve {
             glm::mat4 model;
         };
 
-        // normal 
-        struct UniformNormalParameters{
-            glm::vec4 ambientColor = glm::vec4(0.2f, 0.2f, 0.2f, 0.2f);						// ambient color
-            glm::vec4 diffuseColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);						// diffuse color
-            glm::vec4 specularColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);					// specular color
-            glm::vec4 transparency = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);						// transparency
-
-            float diffuseRough = 1.0f;						// diffuse roughness
-            float shininess = 1.0f;						// specular shininess
-            float reflectivity = 1.0f;						// specular reflectivity
-            float indexOfRefraction = 1.0f;				// index of refraction
-            float extinction = 1.0f;						// extinction of metal
-            float opacity = 1.0f;
-
-            unsigned int  options = 1;
-            unsigned int  version = 2;							// shader version
+        struct ShadowUBO {
+            glm::mat4 depthMVP;
         };
 
-        struct UniformNormalTextureParameters {
-            glm::vec2 diffuseOffset = glm::vec2(0.0f, 0.0f);		// UV pixel offset
-            glm::vec2 diffuseRepeat = glm::vec2(1.0f, 1.0f);		// UV pixel repeat
-
-            glm::vec2 specularOffset = glm::vec2(0.0f, 0.0f);		// UV pixel offset
-            glm::vec2 specularRepeat = glm::vec2(1.0f, 1.0f);		// UV pixel repeat
-
-            glm::vec2 bumpOffset = glm::vec2(0.0f, 0.0f);			// UV pixel offset
-            glm::vec2 bumpRepeat = glm::vec2(1.0f, 1.0f);			// UV pixel repeat
-
-            float diffuseScale = 1.0f;		// diffuse scale
-            float specularScale = 1.0f;		// specular scale
-            float bumpScale = 1.0f;			// bump scale
-        };
-
-        struct UniformSpecialParameters {
-            glm::vec4 tintColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-
-            float shininessU = 0.4f;				// specular shininess
-            float shininessV = 0.4f;				// specular shininess
-            float cutOff = 1.1f;					// cut-off opacity
-        };
-
-        struct UniformSpecialTextureParameters {
-            glm::vec2 cutOffOffset = glm::vec2(0.0f, 0.0f);		// UV pixel offset
-            glm::vec2 cutOffRepeat = glm::vec2(1.0f, 1.0f);		// UV pixel repeat
-            float cutOffScale = 0.5f;		// default scale
+        struct CSM {
+            float cascadeSplits[4];
+            glm::mat4 cascadeViewProjMat[4];
+            glm::vec3 lightDir;
         };
 
         struct QueueFamilyIndices {
@@ -179,12 +130,6 @@ namespace ve {
             std::vector<VkSurfaceFormatKHR> formats;
             std::vector<VkPresentModeKHR> presentModes;
         };
-
-
-        struct ShadowUBO {
-            glm::mat4 depthMVP;
-        };
-
        
         struct ShadowVertex {
             glm::vec3 pos;
@@ -278,8 +223,6 @@ namespace ve {
         bool checkValidationLayerSupport();
         std::vector<char> readFile(const std::string& filename);
 
-        glm::mat4 GetOrthoMatrix(float left, float right, float bottom, float top, float near, float far);
-
     private:
         GLFWwindow* window;
 
@@ -313,30 +256,6 @@ namespace ve {
         VkDeviceMemory depthImageMemory;
         VkImageView depthImageView;
 
-        // diffuse texture
-        VkImage diffuseTexture;
-        VkDeviceMemory diffuseTextureMemory;
-        VkImageView diffuseTextureView;
-        VkSampler diffuseTextureSampler;
-
-        // specular texture
-        VkImage specularTexture;
-        VkDeviceMemory specularTextureMemory;
-        VkImageView specularTextureView;
-        VkSampler specularTextureSampler;
-
-        // bump texture
-        VkImage bumpTexture;
-        VkDeviceMemory bumpTextureMemory;
-        VkImageView bumpTextureView;
-        VkSampler bumpTextureSampler;
-
-        // cutoff texture
-        VkImage cutoffTexture;
-        VkDeviceMemory cutoffTextureMemory;
-        VkImageView cutoffTextureView;
-        VkSampler cutoffTextureSampler;
-
         std::vector<Vertex> vertices;
         std::vector<uint32_t> indices;
         VkBuffer vertexBuffer;
@@ -347,22 +266,6 @@ namespace ve {
         // uniform vp buffer
         VkBuffer uniformMatrixBuffer;
         VkDeviceMemory uniformMatrixBufferMemory;
-
-        // uniform normal buffer
-        VkBuffer uniformNormalBuffer;
-        VkDeviceMemory uniformNormalBufferMemory;
-
-        //uniform normal texture buffer
-        VkBuffer uniformNormalTextureBuffer;
-        VkDeviceMemory uniformNormalTextureBufferMemory;
-
-        //uniform special buffer
-        VkBuffer uniformSpecialBuffer;
-        VkDeviceMemory uniformSpecialBufferMemory;
-
-        //uniform special texture buffer
-        VkBuffer uniformSpecialTextureBuffer;
-        VkDeviceMemory uniformSpecialTextureBufferMemory;
 
         VkDescriptorPool descriptorPool;
         VkDescriptorSet descriptorSet;
@@ -479,11 +382,6 @@ namespace ve {
 
         // version 2
         const std::string MODEL_PATH = "D:/project/vulkan_engine/media/models/shadow.obj";
-        const std::string TEXTURE_PATH = "D:/project/vulkan_engine/media/revite_textures/Masonry.Stone.Limestone.Rustic.png";
-        const std::string SPECULAR_TEXTURE_PATH = "D:/project/vulkan_engine/media/revite_textures/Masonry.Stone.Limestone.Rustic.bump.png";
-        const std::string BUMP_TEXTURE_PATH = "D:/project/vulkan_engine/media/revite_textures/Masonry.Stone.Limestone.Rustic.bump-normal.png";
-        const std::string CUTOFF_TEXTURE_PATH = "D:/project/vulkan_engine/media/revite_textures/Metal-cutoff02.png";
-
        
     };
 }
