@@ -186,17 +186,16 @@ namespace ve {
         createCommandPool();
         createRenderPass();
         createFramebuffers();
-        CreateShadowRenderPass();
-        CreateShadowFrameBuffer();
+        CreateDepthRenderPass();
 
-        CreateShadowLayout();
-        CreateShadowPipeline();
-        CreateShadowVertexBuffer();
-        CreateShadowIndexBuffer();
-        CreateShadowUniformBuffer();
-        CreateShadowDescriptorPool();
-        CreateShadowDescriptorSet();
-        CreateShadowCommandBuffer();
+        CreateDepthLayout();
+        CreateDepthPipeline();
+        CreateDepthVertexBuffer();
+        CreateDepthIndexBuffer();
+        CreateDepthUniformBuffer();
+        CreateDepthDescriptorPool();
+        CreateDepthDescriptorSet();
+        CreateDepthCommandBuffer();
 
         createDescriptorSetLayout();
         createGraphicsPipeline();
@@ -229,7 +228,6 @@ namespace ve {
             vkDestroyFramebuffer(device, swapChainFramebuffers[i], nullptr);
         }
 
-        vkDestroyFramebuffer(device, shadowFramebuffers, nullptr);
 
         vkFreeCommandBuffers(device, commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
         vkFreeCommandBuffers(device, commandPool, 1, &shadowCommandbuffer);
@@ -261,10 +259,9 @@ namespace ve {
         createGraphicsPipeline();
         createFramebuffers();
 
-        CreateShadowRenderPass();
-        CreateShadowFrameBuffer();
-        CreateShadowPipeline();
-        CreateShadowCommandBuffer();
+        CreateDepthRenderPass();
+        CreateDepthPipeline();
+        CreateDepthCommandBuffer();
         CreateCommandBuffers();
 
     }
@@ -518,73 +515,23 @@ namespace ve {
         uboLayoutBinding.pImmutableSamplers = nullptr;
         uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
-        VkDescriptorSetLayoutBinding usvLayoutBinding = {};
-        usvLayoutBinding.binding = 1;
-        usvLayoutBinding.descriptorCount = 1;
-        usvLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        usvLayoutBinding.pImmutableSamplers = nullptr;
-        usvLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        VkDescriptorSetLayoutBinding shadowMapBinding = {};
+        shadowMapBinding.binding = 1;
+        shadowMapBinding.descriptorCount = 1;
+        shadowMapBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        shadowMapBinding.pImmutableSamplers = nullptr;
+        shadowMapBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-        VkDescriptorSetLayoutBinding usfLayoutBinding = {};
-        usfLayoutBinding.binding = 2;
-        usfLayoutBinding.descriptorCount = 1;
-        usfLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        usfLayoutBinding.pImmutableSamplers = nullptr;
-        usfLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        VkDescriptorSetLayoutBinding csmBinding = {};
+        csmBinding.binding = 2;
+        csmBinding.descriptorCount = 1;
+        csmBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        csmBinding.pImmutableSamplers = nullptr;
+        csmBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-        VkDescriptorSetLayoutBinding specialLayoutBinding = {};
-        specialLayoutBinding.binding = 6;
-        specialLayoutBinding.descriptorCount = 1;
-        specialLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        specialLayoutBinding.pImmutableSamplers = nullptr;
-        specialLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-        VkDescriptorSetLayoutBinding specialTextureLayoutBinding = {};
-        specialTextureLayoutBinding.binding = 7;
-        specialTextureLayoutBinding.descriptorCount = 1;
-        specialTextureLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        specialTextureLayoutBinding.pImmutableSamplers = nullptr;
-        specialTextureLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-        VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
-        samplerLayoutBinding.binding = 3;
-        samplerLayoutBinding.descriptorCount = 1;
-        samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        samplerLayoutBinding.pImmutableSamplers = nullptr;
-        samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-        VkDescriptorSetLayoutBinding specularSamplerLayoutBinding = {};
-        specularSamplerLayoutBinding.binding = 4;
-        specularSamplerLayoutBinding.descriptorCount = 1;
-        specularSamplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        specularSamplerLayoutBinding.pImmutableSamplers = nullptr;
-        specularSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-        VkDescriptorSetLayoutBinding bumpSamplerLayoutBinding = {};
-        bumpSamplerLayoutBinding.binding = 5;
-        bumpSamplerLayoutBinding.descriptorCount = 1;
-        bumpSamplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        bumpSamplerLayoutBinding.pImmutableSamplers = nullptr;
-        bumpSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-        VkDescriptorSetLayoutBinding cutoffSamplerLayoutBinding = {};
-        cutoffSamplerLayoutBinding.binding = 8;
-        cutoffSamplerLayoutBinding.descriptorCount = 1;
-        cutoffSamplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        cutoffSamplerLayoutBinding.pImmutableSamplers = nullptr;
-        cutoffSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-        VkDescriptorSetLayoutBinding shadowMapSamplerLayoutBinding = {};
-        shadowMapSamplerLayoutBinding.binding = 9;
-        shadowMapSamplerLayoutBinding.descriptorCount = 1;
-        shadowMapSamplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        shadowMapSamplerLayoutBinding.pImmutableSamplers = nullptr;
-        shadowMapSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-        std::array<VkDescriptorSetLayoutBinding, 10> bindings = {
-            uboLayoutBinding, usvLayoutBinding, usfLayoutBinding, specialLayoutBinding, specialTextureLayoutBinding,
-            samplerLayoutBinding, specularSamplerLayoutBinding, bumpSamplerLayoutBinding, cutoffSamplerLayoutBinding,
-            shadowMapSamplerLayoutBinding};
+        std::array<VkDescriptorSetLayoutBinding, 3> bindings = {
+            uboLayoutBinding, shadowMapBinding, csmBinding };
 
         VkDescriptorSetLayoutCreateInfo layoutInfo = {};
         layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -658,7 +605,7 @@ namespace ve {
         rasterizer.rasterizerDiscardEnable = VK_FALSE;
         rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
         rasterizer.lineWidth = 1.0f;
-        rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+        rasterizer.cullMode = VK_CULL_MODE_NONE;
         rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         rasterizer.depthBiasEnable = VK_FALSE;
 
@@ -1099,39 +1046,21 @@ namespace ve {
 
     void VEngine::createUniformBuffer() {
         createBuffer(sizeof(UniformMatrixBufferObject), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformMatrixBuffer, uniformMatrixBufferMemory);
+        createBuffer(sizeof(CSM), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, csmBuffer, csmBufferMemory);
+
     }
 
     void VEngine::createDescriptorPool() {
-        std::array<VkDescriptorPoolSize, 10> poolSizes = {};
+        std::array<VkDescriptorPoolSize, 3> poolSizes = {};
         poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         poolSizes[0].descriptorCount = 1;
 
-        poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         poolSizes[1].descriptorCount = 1;
 
         poolSizes[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         poolSizes[2].descriptorCount = 1;
-
-        poolSizes[3].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSizes[3].descriptorCount = 1;
-
-        poolSizes[4].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSizes[4].descriptorCount = 1;
-
-        poolSizes[5].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSizes[5].descriptorCount = 1;
-
-        poolSizes[6].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSizes[6].descriptorCount = 1;
-
-        poolSizes[7].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSizes[7].descriptorCount = 1;
-
-        poolSizes[8].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSizes[8].descriptorCount = 1;
-
-        poolSizes[9].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSizes[9].descriptorCount = 1;
+       
 
         VkDescriptorPoolCreateInfo poolInfo = {};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -1166,8 +1095,13 @@ namespace ve {
         shadowMapTextureInfo.imageView = shadowImageView;
         shadowMapTextureInfo.sampler = shadowImageSampler;
 
+        VkDescriptorBufferInfo csmBufferInfo = {};
+        csmBufferInfo.buffer = csmBuffer;
+        csmBufferInfo.offset = 0;
+        csmBufferInfo.range = sizeof(CSM);
 
-        std::array<VkWriteDescriptorSet, 10> descriptorWrites = {};
+
+        std::array<VkWriteDescriptorSet, 3> descriptorWrites = {};
 
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[0].dstSet = descriptorSet;
@@ -1177,13 +1111,21 @@ namespace ve {
         descriptorWrites[0].descriptorCount = 1;
         descriptorWrites[0].pBufferInfo = &matrixBufferInfo;
 
-        descriptorWrites[9].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[9].dstSet = descriptorSet;
-        descriptorWrites[9].dstBinding = 9;
-        descriptorWrites[9].dstArrayElement = 0;
-        descriptorWrites[9].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[9].descriptorCount = 1;
-        descriptorWrites[9].pImageInfo = &shadowMapTextureInfo;
+        descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[1].dstSet = descriptorSet;
+        descriptorWrites[1].dstBinding = 1;
+        descriptorWrites[1].dstArrayElement = 0;
+        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[1].descriptorCount = 1;
+        descriptorWrites[1].pImageInfo = &shadowMapTextureInfo;
+
+        descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[2].dstSet = descriptorSet;
+        descriptorWrites[2].dstBinding = 2;
+        descriptorWrites[2].dstArrayElement = 0;
+        descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[2].descriptorCount = 1;
+        descriptorWrites[2].pBufferInfo = &csmBufferInfo;
 
         vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
     }
@@ -1294,6 +1236,36 @@ namespace ve {
 
     void VEngine::updateUniformBuffer() {
         camera_control();
+        UpdateDepthUniformBuffer();
+        updateSceneUniformBuffer();
+    }
+
+    void VEngine::updateSceneUniformBuffer()
+    {
+        UniformMatrixBufferObject umo = {};
+        umo.proj = camera_perspective_;
+        umo.view = cmare_view_;
+
+        void* data;
+        vkMapMemory(device, uniformMatrixBufferMemory, 0, sizeof(umo), 0, &data);
+        memcpy(data, &umo, sizeof(umo));
+        vkUnmapMemory(device, uniformMatrixBufferMemory);
+
+
+        CSM csm = {};
+
+        for (uint32_t i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++) {
+            csm.cascadeSplits[i] = cascades[i].splitDepth;
+            csm.cascadeViewProjMat[i] = cascades[i].viewProjMatrix;
+        }
+        csm.lightDir = normalize(-lightPos);
+
+        void* csm_data;
+        vkMapMemory(device, csmBufferMemory, 0, sizeof(csm), 0, &csm_data);
+        memcpy(csm_data, &csm, sizeof(csm));
+        vkUnmapMemory(device, csmBufferMemory);
+
+
     }
 
     void VEngine::camera_control()
@@ -1386,144 +1358,23 @@ namespace ve {
 
         float FoV = initialFoV;// - 5 * glfwGetMouseWheel(); // Now GLFW 3 requires setting up a callback for this. It's a bit too complicated for this beginner's tutorial, so it's disabled instead.
 
-
-        UniformMatrixBufferObject umo = {};
-
-        auto camera_near = 0.1f;
-        auto camera_far = 50.0f;
-
         // Projection matrix : 45?Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
-        umo.proj = clip * glm::perspective(FoV, 4.0f / 3.0f, camera_near, camera_far);
+        camera_perspective_ = clip * glm::perspective(FoV, 4.0f / 3.0f, camera_near_clip_, camera_far_clip_);
         //ubo.proj[1][1] *= -1;
 
 
         auto camera_point = position + direction;
 
         // Camera matrix
-        umo.view = glm::lookAt(
+        cmare_view_ = glm::lookAt(
             position,           // Camera is here
             camera_point,       // and looks here : at the same position, plus "direction"
             up                  // Head is up (set to 0,-1,0 to look upside-down)
         );
 
-
-        /*auto camera_direction = -direction;
-        auto light_direction = -lightPos;
-
-        auto r_plane = glm::normalize(glm::cross(light_direction, camera_direction));
-        auto l_plane = glm::normalize(glm::cross(camera_direction, light_direction));
-
-        auto up_plane = glm::normalize(glm::cross(r_plane, light_direction));
-        auto down_plane = glm::normalize(glm::cross(light_direction, r_plane));
-
-
-        auto  = camera_point * r_plane;*/
-
-
-        // spot light
-        /*   glm::mat4 depthProjectionMatrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
-        glm::mat4 depthViewMatrix = glm::lookAt(lightPos, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0f, 1.0f, 0.0f));*/
-
-
-        float cascadeSplitLambda = 0.95f;
-
-        float cascadeSplits[1];
-
-        float nearClip = camera_near;
-        float farClip = camera_far * 0.05;
-        float clipRange = farClip - nearClip;
-
-        float minZ = nearClip;
-        float maxZ = nearClip + clipRange;
-
-        float range = maxZ - minZ;
-        float ratio = maxZ / minZ;
-
-        float p = (1) / static_cast<float>(1);
-        float log = minZ * std::pow(ratio, p);
-        float uniform = minZ + range * p;
-        float d = cascadeSplitLambda * (log - uniform) + uniform;
-        cascadeSplits[0] = (d - nearClip) / clipRange;
-
-        // Calculate orthographic projection matrix for each cascade
-        float lastSplitDist = 0.0;
-        float splitDist = cascadeSplits[0];
-
-        glm::vec3 frustumCorners[8] = {
-            glm::vec3(-1.0f,  1.0f, -1.0f),
-            glm::vec3(1.0f,  1.0f, -1.0f),
-            glm::vec3(1.0f, -1.0f, -1.0f),
-            glm::vec3(-1.0f, -1.0f, -1.0f),
-            glm::vec3(-1.0f,  1.0f,  1.0f),
-            glm::vec3(1.0f,  1.0f,  1.0f),
-            glm::vec3(1.0f, -1.0f,  1.0f),
-            glm::vec3(-1.0f, -1.0f,  1.0f),
-        };
-
-        // Project frustum corners into world space
-        glm::mat4 invCam = glm::inverse(umo.proj * umo.view);
-        for (uint32_t i = 0; i < 8; i++) {
-            glm::vec4 invCorner = invCam * glm::vec4(frustumCorners[i], 1.0f);
-            frustumCorners[i] = invCorner / invCorner.w;
-        }
-
-        for (uint32_t i = 0; i < 4; i++) {
-            glm::vec3 dist = frustumCorners[i + 4] - frustumCorners[i];
-            frustumCorners[i + 4] = frustumCorners[i] + (dist * splitDist);
-            frustumCorners[i] = frustumCorners[i] + (dist * lastSplitDist);
-        }
-
-        // Get frustum center
-        glm::vec3 frustumCenter = glm::vec3(0.0f);
-        for (uint32_t i = 0; i < 8; i++) {
-            frustumCenter += frustumCorners[i];
-        }
-        frustumCenter /= 8.0f;
-
-        //frustumCenter *= 0.02f;
-
-        float radius = 0.0f;
-        for (uint32_t i = 0; i < 8; i++) {
-            float distance = glm::length(frustumCorners[i] - frustumCenter);
-            radius = glm::max(radius, distance);
-        }
-        radius = std::ceil(radius * 16.0f) / 16.0f;
-
-        glm::vec3 maxExtents = glm::vec3(radius);
-        glm::vec3 minExtents = -maxExtents;
-
-        glm::vec3 lightDir = normalize(-lightPos);
-        glm::mat4 depthViewMatrix = glm::lookAt(frustumCenter - lightDir * -minExtents.z, frustumCenter, glm::vec3(0.0f, 1.0f, 0.0f));
-        glm::mat4 depthProjectionMatrix = glm::ortho(minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, 0.0f, maxExtents.z - minExtents.z);
-
-
-        // direction light
-
-        /*glm::mat4 depthProjectionMatrix = glm::ortho<float>(20.0, -20.0, -20.0, 20.0, -20.0, 40.0);
-        glm::mat4 depthViewMatrix = glm::lookAt(lightPos, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0f, 1.0f, 0.0f));*/
-
-        //glm::mat4 depthModelMatrix = glm::translate(glm::mat4(1.0), -camera_point);
-
-        glm::mat4 depthModelMatrix = glm::mat4(1.0);
-
-        ubo.depthMVP = clip * depthProjectionMatrix * depthViewMatrix * depthModelMatrix;
-
-        void* uboData;
-        VK_CHECK_RESULT(vkMapMemory(device, shadowUniformBufferMemory, 0, sizeof(ShadowUBO), 0, &uboData));
-        memcpy(uboData, &ubo.depthMVP, sizeof(ShadowUBO));
-        vkUnmapMemory(device, shadowUniformBufferMemory);
-
-        umo.lightSpace = bias * ubo.depthMVP;
-
-        umo.lightPos = lightPos;
-
         // For the next frame, the "last time" will be "now"
         lastTime = currentTime;
 
-        void* data;
-        vkMapMemory(device, uniformMatrixBufferMemory, 0, sizeof(umo), 0, &data);
-        memcpy(data, &umo, sizeof(umo));
-        vkUnmapMemory(device, uniformMatrixBufferMemory);
 
     }
 
@@ -1605,113 +1456,41 @@ namespace ve {
         createDescriptorSet();
         CreateCommandBuffers();
 
-        CreateShadowVertexBuffer();
-        CreateShadowIndexBuffer();
-        CreateShadowUniformBuffer();
-        CreateShadowDescriptorPool();
-        CreateShadowDescriptorSet();
+        CreateDepthVertexBuffer();
+        CreateDepthIndexBuffer();
+        CreateDepthUniformBuffer();
+        CreateDepthDescriptorPool();
+        CreateDepthDescriptorSet();
 
     }
 
-    void VEngine::CreateShadowFrameBuffer()
+    void VEngine::CreateDepthRenderPass()
     {
-        // For shadow mapping we only need a depth attachment
-        VkImageCreateInfo image = {};
-        image.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        image.imageType = VK_IMAGE_TYPE_2D;
-        image.extent.width = shadow_width;
-        image.extent.height = shadow_height;
-        image.extent.depth = 1;
-        image.mipLevels = 1;
-        image.arrayLayers = 1;
-        image.samples = VK_SAMPLE_COUNT_1_BIT;
-        image.tiling = VK_IMAGE_TILING_OPTIMAL;
 
-        image.format = depthFormat;																// Depth stencil attachment
-        image.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;		// We will sample directly from the depth attachment for the shadow mapping
-        VK_CHECK_RESULT(vkCreateImage(device, &image, nullptr, &shadowImage));
+        /*
+        Depth map renderpass
+        */
 
-        VkMemoryAllocateInfo memAlloc = {};
-        VkMemoryRequirements memReqs = {};
-
-        memAlloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        vkGetImageMemoryRequirements(device, shadowImage, &memReqs);
-        memAlloc.allocationSize = memReqs.size;
-
-        memAlloc.memoryTypeIndex = findMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-        VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, &shadowImageMemory));
-        VK_CHECK_RESULT(vkBindImageMemory(device, shadowImage, shadowImageMemory, 0));
-
-        VkImageViewCreateInfo depthStencilView = {};
-        depthStencilView.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        depthStencilView.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        depthStencilView.format = depthFormat;
-        depthStencilView.subresourceRange = {};
-        depthStencilView.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        depthStencilView.subresourceRange.baseMipLevel = 0;
-        depthStencilView.subresourceRange.levelCount = 1;
-        depthStencilView.subresourceRange.baseArrayLayer = 0;
-        depthStencilView.subresourceRange.layerCount = 1;
-        depthStencilView.image = shadowImage;
-        VK_CHECK_RESULT(vkCreateImageView(device, &depthStencilView, nullptr, &shadowImageView));
-
-        // Create sampler to sample from to depth attachment 
-        // Used to sample in the fragment shader for shadowed rendering
-        VkSamplerCreateInfo sampler = {};
-        sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-        sampler.magFilter = SHADOWMAP_FILTER;
-        sampler.minFilter = SHADOWMAP_FILTER;
-        sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-        sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-        sampler.addressModeV = sampler.addressModeU;
-        sampler.addressModeW = sampler.addressModeU;
-        sampler.mipLodBias = 0.0f;
-        sampler.maxAnisotropy = 10.0f;
-        sampler.minLod = 0.0f;
-        sampler.maxLod = 10.0f;
-        sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-      /*  sampler.compareEnable = VK_TRUE;
-        sampler.compareOp = VK_COMPARE_OP_LESS;*/
-
-
-        VK_CHECK_RESULT(vkCreateSampler(device, &sampler, nullptr, &shadowImageSampler));
-
-        // Create frame buffer
-        VkFramebufferCreateInfo fbufCreateInfo = {};
-        fbufCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        fbufCreateInfo.renderPass = shadowRenderPass;
-        fbufCreateInfo.attachmentCount = 1;
-        fbufCreateInfo.pAttachments = &shadowImageView;
-        fbufCreateInfo.width = shadow_width;
-        fbufCreateInfo.height = shadow_height;
-        fbufCreateInfo.layers = 1;
-
-        VK_CHECK_RESULT(vkCreateFramebuffer(device, &fbufCreateInfo, nullptr, &shadowFramebuffers));
-
-
-    }
-
-    void VEngine::CreateShadowRenderPass()
-    {
-        VkAttachmentDescription attachmentDescription = {};
+        VkAttachmentDescription attachmentDescription{};
         attachmentDescription.format = depthFormat;
         attachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
-        attachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;							// Clear depth at beginning of the render pass
-        attachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;						// We will read from depth, so it's important to store the depth attachment results
+        attachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         attachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         attachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        attachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;					// We don't care about initial layout of the attachment
-        attachmentDescription.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;// Attachment will be transitioned to shader read at render pass end
+        attachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachmentDescription.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 
         VkAttachmentReference depthReference = {};
         depthReference.attachment = 0;
-        depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;			// Attachment will be used as depth/stencil during render pass
+        depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
         VkSubpassDescription subpass = {};
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass.colorAttachmentCount = 0;													// No color attachments
-        subpass.pDepthStencilAttachment = &depthReference;									// Reference to our depth attachment
-                                                                                            // Use subpass dependencies for layout transitions
+        subpass.colorAttachmentCount = 0;
+        subpass.pDepthStencilAttachment = &depthReference;
+
+        // Use subpass dependencies for layout transitions
         std::array<VkSubpassDependency, 2> dependencies;
 
         dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -1740,9 +1519,102 @@ namespace ve {
         renderPassCreateInfo.pDependencies = dependencies.data();
 
         VK_CHECK_RESULT(vkCreateRenderPass(device, &renderPassCreateInfo, nullptr, &shadowRenderPass));
+
+        /*
+        Layered depth image and views
+        */
+
+        // For shadow mapping we only need a depth attachment
+        VkImageCreateInfo image = {};
+        image.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        image.imageType = VK_IMAGE_TYPE_2D;
+        image.extent.width = shadow_width;
+        image.extent.height = shadow_height;
+        image.extent.depth = 1;
+        image.mipLevels = 1;
+        image.arrayLayers = SHADOW_MAP_CASCADE_COUNT;
+        image.samples = VK_SAMPLE_COUNT_1_BIT;
+        image.tiling = VK_IMAGE_TILING_OPTIMAL;
+
+        image.format = depthFormat;																// Depth stencil attachment
+        image.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;		// We will sample directly from the depth attachment for the shadow mapping
+        VK_CHECK_RESULT(vkCreateImage(device, &image, nullptr, &shadowImage));
+
+        VkMemoryAllocateInfo memAlloc = {};
+        VkMemoryRequirements memReqs = {};
+
+        memAlloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        vkGetImageMemoryRequirements(device, shadowImage, &memReqs);
+        memAlloc.allocationSize = memReqs.size;
+
+        memAlloc.memoryTypeIndex = findMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, &shadowImageMemory));
+        VK_CHECK_RESULT(vkBindImageMemory(device, shadowImage, shadowImageMemory, 0));
+
+
+        VkImageViewCreateInfo depthStencilView = {};
+        depthStencilView.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        depthStencilView.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+        depthStencilView.format = depthFormat;
+        depthStencilView.subresourceRange = {};
+        depthStencilView.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        depthStencilView.subresourceRange.baseMipLevel = 0;
+        depthStencilView.subresourceRange.levelCount = 1;
+        depthStencilView.subresourceRange.baseArrayLayer = 0;
+        depthStencilView.subresourceRange.layerCount = SHADOW_MAP_CASCADE_COUNT;
+        depthStencilView.image = shadowImage;
+        VK_CHECK_RESULT(vkCreateImageView(device, &depthStencilView, nullptr, &shadowImageView));
+
+
+        // One image and framebuffer per cascade
+        for (uint32_t i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++) {
+            // Image view for this cascade's layer (inside the depth map)
+            // This view is used to render to that specific depth image layer
+            VkImageViewCreateInfo viewInfo = {};
+            viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+            viewInfo.format = depthFormat;
+            viewInfo.subresourceRange = {};
+            viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+            viewInfo.subresourceRange.baseMipLevel = 0;
+            viewInfo.subresourceRange.levelCount = 1;
+            viewInfo.subresourceRange.baseArrayLayer = i;
+            viewInfo.subresourceRange.layerCount = 1;
+            viewInfo.image = shadowImage;
+            VK_CHECK_RESULT(vkCreateImageView(device, &viewInfo, nullptr, &cascades[i].view));
+            // Framebuffer
+            VkFramebufferCreateInfo framebufferInfo = {};
+            framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+            framebufferInfo.renderPass = shadowRenderPass;
+            framebufferInfo.attachmentCount = 1;
+            framebufferInfo.pAttachments = &cascades[i].view;
+            framebufferInfo.width = shadow_width;
+            framebufferInfo.height = shadow_width;
+            framebufferInfo.layers = 1;
+            VK_CHECK_RESULT(vkCreateFramebuffer(device, &framebufferInfo, nullptr, &cascades[i].frameBuffer));
+        }
+
+        // Create sampler to sample from to depth attachment 
+        // Used to sample in the fragment shader for shadowed rendering
+        VkSamplerCreateInfo sampler = {};
+        sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        sampler.magFilter = SHADOWMAP_FILTER;
+        sampler.minFilter = SHADOWMAP_FILTER;
+        sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        sampler.addressModeV = sampler.addressModeU;
+        sampler.addressModeW = sampler.addressModeU;
+        sampler.mipLodBias = 0.0f;
+        sampler.maxAnisotropy = 1.0f;
+        sampler.minLod = 0.0f;
+        sampler.maxLod = 1.0f;
+        sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+
+        VK_CHECK_RESULT(vkCreateSampler(device, &sampler, nullptr, &shadowImageSampler));
+       
     }
 
-    void VEngine::CreateShadowLayout()
+    void VEngine::CreateDepthLayout()
     {
 
         std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings;
@@ -1764,16 +1636,26 @@ namespace ve {
 
         VK_CHECK_RESULT(vkCreateDescriptorSetLayout(device, &descriptorLayout, nullptr, &shadowDescriptorSetLayout));
 
+
+        // Push constants for model matrices
+        VkPushConstantRange pushConstantRange = {};
+        pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        pushConstantRange.offset = 0;
+        pushConstantRange.size = sizeof(ShadowPushConstBlock);
+
         VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo = {};
         pPipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pPipelineLayoutCreateInfo.setLayoutCount = 1;
         pPipelineLayoutCreateInfo.pSetLayouts = &shadowDescriptorSetLayout;
+        pPipelineLayoutCreateInfo.pushConstantRangeCount = 1;
+        pPipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
+
 
         VK_CHECK_RESULT(vkCreatePipelineLayout(device, &pPipelineLayoutCreateInfo, nullptr, &shadowPipelineLayout));
 
     }
 
-    void VEngine::CreateShadowVertexBuffer()
+    void VEngine::CreateDepthVertexBuffer()
     {
         VkDeviceSize bufferSize = sizeof(shadowVertices[0]) * shadowVertices.size();
 
@@ -1795,7 +1677,7 @@ namespace ve {
 
     }
 
-    void VEngine::CreateShadowIndexBuffer()
+    void VEngine::CreateDepthIndexBuffer()
     {
         VkDeviceSize bufferSize = sizeof(shadowIndices[0]) * shadowIndices.size();
 
@@ -1817,28 +1699,28 @@ namespace ve {
 
     }
 
-    void VEngine::CreateShadowUniformBuffer()
+    void VEngine::CreateDepthUniformBuffer()
     {
-        createBuffer(sizeof(ShadowUBO), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, shadowUniformBuffer, shadowUniformBufferMemory);
+        createBuffer(sizeof(ShadowUniformBlock), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, shadowUniformBuffer, shadowUniformBufferMemory);
     }
 
-    void VEngine::CreateShadowDescriptorPool()
+    void VEngine::CreateDepthDescriptorPool()
     {
         std::array<VkDescriptorPoolSize, 1> poolSizes = {};
         poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSizes[0].descriptorCount = 1;
+        poolSizes[0].descriptorCount = SHADOW_MAP_CASCADE_COUNT;
 
         VkDescriptorPoolCreateInfo poolInfo = {};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
         poolInfo.pPoolSizes = poolSizes.data();
-        poolInfo.maxSets = 1;
+        poolInfo.maxSets = SHADOW_MAP_CASCADE_COUNT;
 
         VK_CHECK_RESULT(vkCreateDescriptorPool(device, &poolInfo, nullptr, &shadowDescriptorPool));
 
     }
 
-    void VEngine::CreateShadowDescriptorSet()
+    void VEngine::CreateDepthDescriptorSet()
     {
         VkDescriptorSetLayout layouts[] = { shadowDescriptorSetLayout };
         VkDescriptorSetAllocateInfo allocInfo = {};
@@ -1847,31 +1729,39 @@ namespace ve {
         allocInfo.descriptorSetCount = 1;
         allocInfo.pSetLayouts = layouts;
 
-        VK_CHECK_RESULT(vkAllocateDescriptorSets(device, &allocInfo, &shadowDescriptorSet));
 
         VkDescriptorBufferInfo matrixBufferInfo = {};
         matrixBufferInfo.buffer = shadowUniformBuffer;
         matrixBufferInfo.offset = 0;
-        matrixBufferInfo.range = sizeof(ShadowUBO);
+        matrixBufferInfo.range = sizeof(ShadowUniformBlock);
 
-        std::array<VkWriteDescriptorSet, 1> descriptorWrites = {};
+        std::vector<VkWriteDescriptorSet> writeDescriptorSets;
 
-        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[0].dstSet = shadowDescriptorSet;
-        descriptorWrites[0].dstBinding = 0;
-        descriptorWrites[0].dstArrayElement = 0;
-        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrites[0].descriptorCount = 1;
-        descriptorWrites[0].pBufferInfo = &matrixBufferInfo;
+        // Per-cascade descriptor sets
+        // Each descriptor set represents a single layer of the array texture
+        for (uint32_t i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++) {
+            VK_CHECK_RESULT(vkAllocateDescriptorSets(device, &allocInfo, &cascades[i].descriptorSet));
+            VkWriteDescriptorSet descriptorWrites = {};
 
+            descriptorWrites.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites.dstSet = cascades[i].descriptorSet;
+            descriptorWrites.dstBinding = 0;
+            descriptorWrites.dstArrayElement = 0;
+            descriptorWrites.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptorWrites.descriptorCount = 1;
+            descriptorWrites.pBufferInfo = &matrixBufferInfo;
 
-        vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+            writeDescriptorSets.push_back(descriptorWrites);
+
+            vkUpdateDescriptorSets(device, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, NULL);
+        }
+
     }
 
-    void VEngine::CreateShadowPipeline()
+    void VEngine::CreateDepthPipeline()
     {
-        auto vertShaderCode = readFile("D:/project/vulkan_engine/media/shaders/offscreen.vert.spv");
-        auto fragShaderCode = readFile("D:/project/vulkan_engine/media/shaders/offscreen.frag.spv");
+        auto vertShaderCode = readFile("D:/project/vulkan_engine/media/shaders/csm_depth.vert.spv");
+        auto fragShaderCode = readFile("D:/project/vulkan_engine/media/shaders/csm_depth.frag.spv");
 
         VkShaderModule shadowVertShaderModule = createShaderModule(vertShaderCode);
         VkShaderModule shadowFragShaderModule = createShaderModule(fragShaderCode);
@@ -1970,7 +1860,7 @@ namespace ve {
 
     }
 
-    void VEngine::CreateShadowCommandBuffer()
+    void VEngine::CreateDepthCommandBuffer()
     {
 
         VkCommandBufferAllocateInfo allocInfo = {};
@@ -1991,12 +1881,11 @@ namespace ve {
         VkRenderPassBeginInfo renderPassBeginInfo = {};
         renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassBeginInfo.renderPass = shadowRenderPass;
-        renderPassBeginInfo.framebuffer = shadowFramebuffers;
         renderPassBeginInfo.renderArea.offset.x = 0;
         renderPassBeginInfo.renderArea.offset.y = 0;
         renderPassBeginInfo.renderArea.extent.width = shadow_width;
         renderPassBeginInfo.renderArea.extent.height = shadow_height;
-        renderPassBeginInfo.clearValueCount = 2;
+        renderPassBeginInfo.clearValueCount = 1;
         renderPassBeginInfo.pClearValues = clearValues;
 
         VK_CHECK_RESULT(vkBeginCommandBuffer(shadowCommandbuffer, &cmdBufInfo));
@@ -2017,27 +1906,133 @@ namespace ve {
 
         vkCmdSetScissor(shadowCommandbuffer, 0, 1, &scissor);
 
-        // Set depth bias (aka "Polygon offset")
-        // Required to avoid shadow mapping artefacts
-        vkCmdSetDepthBias(
-            shadowCommandbuffer,
-            3.0f,
-            0.0f,
-            3.8f);
 
-        vkCmdBeginRenderPass(shadowCommandbuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+        //// Set depth bias (aka "Polygon offset")
+        //// Required to avoid shadow mapping artefacts
+        //vkCmdSetDepthBias(
+        //    shadowCommandbuffer,
+        //    3.0f,
+        //    0.0f,
+        //    3.8f);
 
-        vkCmdBindPipeline(shadowCommandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipeline);
-        vkCmdBindDescriptorSets(shadowCommandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipelineLayout, 0, 1, &shadowDescriptorSet, 0, NULL);
 
-        VkDeviceSize offsets[1] = { 0 };
-        vkCmdBindVertexBuffers(shadowCommandbuffer, 0, 1, &shadowVertexBuffer, offsets);
-        vkCmdBindIndexBuffer(shadowCommandbuffer, shadowIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-        vkCmdDrawIndexed(shadowCommandbuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
-
-        vkCmdEndRenderPass(shadowCommandbuffer);
+        // One pass per cascade
+        // The layer that this pass renders too is defined by the cascade's image view (selected via the cascade's decsriptor set)
+        for (uint32_t i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++) {
+            renderPassBeginInfo.framebuffer = cascades[i].frameBuffer;
+            vkCmdBeginRenderPass(shadowCommandbuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+            vkCmdBindPipeline(shadowCommandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipeline);
+            renderScene(shadowCommandbuffer, shadowPipelineLayout, cascades[i].descriptorSet, i);
+            vkCmdEndRenderPass(shadowCommandbuffer);
+        }
 
         VK_CHECK_RESULT(vkEndCommandBuffer(shadowCommandbuffer));
+
+    }
+
+    void VEngine::UpdateDepthUniformBuffer()
+    {
+        float cascadeSplits[SHADOW_MAP_CASCADE_COUNT];
+
+        float nearClip = camera_near_clip_;
+        float farClip = camera_far_clip_;
+        float clipRange = farClip - nearClip;
+
+        float minZ = nearClip;
+        float maxZ = nearClip + clipRange;
+
+        float range = maxZ - minZ;
+        float ratio = maxZ / minZ;
+
+        // Calculate split depths based on view camera furstum
+        // Based on method presentd in https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch10.html
+        for (uint32_t i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++) {
+            float p = (i + 1) / static_cast<float>(SHADOW_MAP_CASCADE_COUNT);
+            float log = minZ * std::pow(ratio, p);
+            float uniform = minZ + range * p;
+            float d = cascadeSplitLambda * (log - uniform) + uniform;
+            cascadeSplits[i] = (d - nearClip) / clipRange;
+        }
+
+        // Calculate orthographic projection matrix for each cascade
+        float lastSplitDist = 0.0;
+        for (uint32_t i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++) {
+            float splitDist = cascadeSplits[i];
+
+            glm::vec3 frustumCorners[8] = {
+                glm::vec3(-1.0f,  1.0f, -1.0f),
+                glm::vec3(1.0f,  1.0f, -1.0f),
+                glm::vec3(1.0f, -1.0f, -1.0f),
+                glm::vec3(-1.0f, -1.0f, -1.0f),
+                glm::vec3(-1.0f,  1.0f,  1.0f),
+                glm::vec3(1.0f,  1.0f,  1.0f),
+                glm::vec3(1.0f, -1.0f,  1.0f),
+                glm::vec3(-1.0f, -1.0f,  1.0f),
+            };
+
+            // Project frustum corners into world space
+            glm::mat4 invCam = glm::inverse(camera_perspective_ * cmare_view_);
+            for (uint32_t i = 0; i < 8; i++) {
+                glm::vec4 invCorner = invCam * glm::vec4(frustumCorners[i], 1.0f);
+                frustumCorners[i] = invCorner / invCorner.w;
+            }
+
+            for (uint32_t i = 0; i < 4; i++) {
+                glm::vec3 dist = frustumCorners[i + 4] - frustumCorners[i];
+                frustumCorners[i + 4] = frustumCorners[i] + (dist * splitDist);
+                frustumCorners[i] = frustumCorners[i] + (dist * lastSplitDist);
+            }
+
+            // Get frustum center
+            glm::vec3 frustumCenter = glm::vec3(0.0f);
+            for (uint32_t i = 0; i < 8; i++) {
+                frustumCenter += frustumCorners[i];
+            }
+            frustumCenter /= 8.0f;
+
+            float radius = 0.0f;
+            for (uint32_t i = 0; i < 8; i++) {
+                float distance = glm::length(frustumCorners[i] - frustumCenter);
+                radius = glm::max(radius, distance);
+            }
+            radius = std::ceil(radius * 16.0f) / 16.0f;
+
+            glm::vec3 maxExtents = glm::vec3(radius);
+            glm::vec3 minExtents = -maxExtents;
+
+            glm::vec3 lightDir = normalize(-lightPos);
+            glm::mat4 lightViewMatrix = glm::lookAt(frustumCenter - lightDir * -minExtents.z, frustumCenter, glm::vec3(0.0f, 1.0f, 0.0f));
+            glm::mat4 lightOrthoMatrix = glm::ortho(minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, 0.0f, maxExtents.z - minExtents.z);
+
+            // Store split distance and matrix in cascade
+            cascades[i].splitDepth = (camera_near_clip_ + splitDist * clipRange) * -1.0f;
+            cascades[i].viewProjMatrix = lightOrthoMatrix * lightViewMatrix;
+
+            lastSplitDist = cascadeSplits[i];
+        }
+
+        for (uint32_t i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++) {
+            sub.cascadeViewProjMat[i] = cascades[i].viewProjMatrix;
+        }
+
+        void* uboData;
+        VK_CHECK_RESULT(vkMapMemory(device, shadowUniformBufferMemory, 0, sizeof(ShadowUniformBlock), 0, &uboData));
+        memcpy(uboData, &sub, sizeof(ShadowUniformBlock));
+        vkUnmapMemory(device, shadowUniformBufferMemory);
+    }
+
+    void VEngine::renderScene(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, VkDescriptorSet descriptorSet, uint32_t cascadeIndex) {
+        const VkDeviceSize offsets[1] = { 0 };
+        ShadowPushConstBlock pushConstBlock = { cascadeIndex };
+
+        std::array<VkDescriptorSet, 1> sets;
+        sets[0] = descriptorSet;
+
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, sets.data(), 0, NULL);
+        vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ShadowPushConstBlock), &pushConstBlock);
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &shadowVertexBuffer, offsets);
+        vkCmdBindIndexBuffer(commandBuffer, shadowIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdDrawIndexed(commandBuffer, shadowIndices.size(), 1, 0, 0, 0);
 
     }
 

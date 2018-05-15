@@ -262,26 +262,26 @@
 //{
 //}
 //
-//void ve::VShadow::CreateShadowVertexBuffer()
+//void ve::VShadow::CreateDepthVertexBuffer()
 //{
 //}
 //
-//void ve::VShadow::CreateShadowIndexBuffer()
+//void ve::VShadow::CreateDepthIndexBuffer()
 //{
 //}
 //
-//void ve::VShadow::CreateShadowUniformBuffer()
+//void ve::VShadow::CreateDepthUniformBuffer()
 //{
 //}
 //
-//void ve::VShadow::CreateShadowDescriptorPool()
+//void ve::VShadow::CreateDepthDescriptorPool()
 //{
 //}
 //
-//void ve::VShadow::CreateShadowDescriptorSet()
+//void ve::VShadow::CreateDepthDescriptorSet()
 //{
 //}
 //
-//void ve::VShadow::CreateShadowCommandBuffer()
+//void ve::VShadow::CreateDepthCommandBuffer()
 //{
 //}

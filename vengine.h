@@ -29,6 +29,8 @@
 
 #include "vulkan/vulkan.hpp"
 
+#define SHADOW_MAP_CASCADE_COUNT 4
+
 namespace ve {
     class VEngine : public ve::VObject
     {
@@ -75,39 +77,34 @@ namespace ve {
 
         void createSemaphores();
         void updateUniformBuffer();
+        void updateSceneUniformBuffer();
         void camera_control();
         void drawFrame();
 
         void RecreateBufer();
 
 
-        /* shadow */
-        void CreateShadowFrameBuffer();
-        void CreateShadowRenderPass();
-        void CreateShadowLayout();
-        void CreateShadowVertexBuffer();
-        void CreateShadowIndexBuffer();
-        void CreateShadowUniformBuffer();
-        void CreateShadowDescriptorPool();
-        void CreateShadowDescriptorSet();
-        void CreateShadowPipeline();
-        void CreateShadowCommandBuffer();
+        /* Depth */
+        void CreateDepthRenderPass();
+        void CreateDepthLayout();
+        void CreateDepthVertexBuffer();
+        void CreateDepthIndexBuffer();
+        void CreateDepthUniformBuffer();
+        void CreateDepthDescriptorPool();
+        void CreateDepthDescriptorSet();
+        void CreateDepthPipeline();
+        void CreateDepthCommandBuffer();
 
+        void UpdateDepthUniformBuffer();
 
     public:
         struct UniformMatrixBufferObject {
             glm::mat4 view;
             glm::mat4 proj;
-            glm::mat4 lightSpace;
-            glm::vec3 lightPos;
         };
 
         struct ConstantMatrixModel {
             glm::mat4 model;
-        };
-
-        struct ShadowUBO {
-            glm::mat4 depthMVP;
         };
 
         struct CSM {
@@ -115,6 +112,17 @@ namespace ve {
             glm::mat4 cascadeViewProjMat[4];
             glm::vec3 lightDir;
         };
+
+
+        // For simplicity all pipelines use the same push constant block layout
+        struct ShadowPushConstBlock {
+            uint32_t cascadeIndex;
+        };
+
+        struct ShadowUniformBlock {
+            std::array<glm::mat4, SHADOW_MAP_CASCADE_COUNT> cascadeViewProjMat;
+        };
+
 
         struct QueueFamilyIndices {
             int graphicsFamily = -1;
@@ -223,6 +231,9 @@ namespace ve {
         bool checkValidationLayerSupport();
         std::vector<char> readFile(const std::string& filename);
 
+        void renderScene(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, VkDescriptorSet descriptorSet, uint32_t cascadeIndex = 0);
+
+
     private:
         GLFWwindow* window;
 
@@ -267,6 +278,9 @@ namespace ve {
         VkBuffer uniformMatrixBuffer;
         VkDeviceMemory uniformMatrixBufferMemory;
 
+        VkBuffer csmBuffer;
+        VkDeviceMemory csmBufferMemory;
+
         VkDescriptorPool descriptorPool;
         VkDescriptorSet descriptorSet;
 
@@ -290,7 +304,21 @@ namespace ve {
         std::vector<ShadowVertex> shadowVertices;
         std::vector<uint32_t> shadowIndices;
 
-        VkFramebuffer shadowFramebuffers;
+        // Contains all resources required for a single shadow map cascade
+        struct Cascade {
+            VkFramebuffer frameBuffer;
+            VkDescriptorSet descriptorSet;
+            VkImageView view;
+
+            float splitDepth;
+            glm::mat4 viewProjMatrix;
+
+            void destroy(VkDevice device) {
+                vkDestroyImageView(device, view, nullptr);
+                vkDestroyFramebuffer(device, frameBuffer, nullptr);
+            }
+        };
+
         VkRenderPass shadowRenderPass;
         VkImage shadowImage;
         VkDeviceMemory shadowImageMemory;
@@ -305,7 +333,6 @@ namespace ve {
         VkCommandBuffer shadowCommandbuffer;
         
         VkDescriptorPool shadowDescriptorPool;
-        VkDescriptorSet shadowDescriptorSet;
         VkDescriptorSetLayout shadowDescriptorSetLayout;
 
         VkBuffer shadowVertexBuffer;
@@ -338,6 +365,14 @@ namespace ve {
         const int WIDTH = 800;
         const int HEIGHT = 600;
 
+        float camera_near_clip_ = 0.1f;
+        float camera_far_clip_ = 1000.0f;
+        glm::mat4 camera_perspective_;
+        glm::mat4 cmare_view_;
+
+        float cascadeSplitLambda = 0.95f;
+
+
         // Initial position : on +Z
         glm::vec3 position = glm::vec3(0.01, 2, 10.01);
         // Initial horizontal angle : toward -Z
@@ -353,7 +388,9 @@ namespace ve {
         double last_xpos_ = 0.0f;
         double last_ypos_ = 0.0f;
 
-        ShadowUBO ubo = {};
+        ShadowPushConstBlock spcb = {};
+
+        ShadowUniformBlock sub = {};
 
         //glm::vec3 lightPos = glm::vec3(10.1f, 10.0f, 10.1f);
 
@@ -373,8 +410,11 @@ namespace ve {
             0.0, 0.0, 0.5, 0.0,
             0.0, 0.0, 0.5, 1.0 };
 
-        uint32_t shadow_width = 2048;
-        uint32_t shadow_height = 2048;
+        uint32_t shadow_width = 4096;
+        uint32_t shadow_height = 4096;
+
+        
+        std::array<Cascade, SHADOW_MAP_CASCADE_COUNT> cascades;
 
         bool kFirstPress = true;
 

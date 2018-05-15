@@ -8,14 +8,13 @@ layout (location = 0) in vec3 inPos;
 // todo: pass via specialization constant
 #define SHADOW_MAP_CASCADE_COUNT 4
 
-layout(push_constant) uniform PushConsts {
-	vec4 position;
+layout(push_constant) uniform ShadowPushConstBlock {
 	uint cascadeIndex;
-} pushConsts;
+} spcb;
 
-layout (binding = 0) uniform UBO {
+layout (binding = 0) uniform ShadowUniformBlock {
 	mat4[SHADOW_MAP_CASCADE_COUNT] cascadeViewProjMat;
-} ubo;
+} sub;
 
 // layout (location = 0) out vec2 outUV;
 
@@ -26,6 +25,6 @@ out gl_PerVertex {
 void main()
 {
 	// outUV = inUV;
-	vec3 pos = inPos + pushConsts.position.xyz;
-	gl_Position =  ubo.cascadeViewProjMat[pushConsts.cascadeIndex] * vec4(pos, 1.0);
+	vec3 pos = inPos;
+	gl_Position =  sub.cascadeViewProjMat[spcb.cascadeIndex] * vec4(pos, 1.0);
 }

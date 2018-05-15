@@ -51,12 +51,12 @@
 //        void RecreateSwapChain();
 //
 //    private:
-//        void CreateShadowVertexBuffer();
-//        void CreateShadowIndexBuffer();
-//        void CreateShadowUniformBuffer();
-//        void CreateShadowDescriptorPool();
-//        void CreateShadowDescriptorSet();
-//        void CreateShadowCommandBuffer();
+//        void CreateDepthVertexBuffer();
+//        void CreateDepthIndexBuffer();
+//        void CreateDepthUniformBuffer();
+//        void CreateDepthDescriptorPool();
+//        void CreateDepthDescriptorSet();
+//        void CreateDepthCommandBuffer();
 //
 //        (VkPhysicalDevice device);
 //
