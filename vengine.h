@@ -101,6 +101,7 @@ namespace ve {
         struct UniformMatrixBufferObject {
             glm::mat4 view;
             glm::mat4 proj;
+            glm::vec3 lightDir;
         };
 
         struct ConstantMatrixModel {
@@ -110,7 +111,6 @@ namespace ve {
         struct CSM {
             float cascadeSplits[4];
             glm::mat4 cascadeViewProjMat[4];
-            glm::vec3 lightDir;
         };
 
 
@@ -362,8 +362,8 @@ namespace ve {
 
 
     private:
-        const int WIDTH = 800;
-        const int HEIGHT = 600;
+        const int WIDTH = 1920;
+        const int HEIGHT = 1080;
 
         float camera_near_clip_ = 0.1f;
         float camera_far_clip_ = 1000.0f;
@@ -395,7 +395,7 @@ namespace ve {
         //glm::vec3 lightPos = glm::vec3(10.1f, 10.0f, 10.1f);
 
         // light direction 
-        glm::vec3 lightPos = glm::vec3(1.0f, 1.0f, 0.001f);
+        glm::vec3 lightPos = glm::vec3(1.001f, 1.0f, 0.001f);
 
 
         glm::mat4 bias = glm::mat4{ 
@@ -412,7 +412,6 @@ namespace ve {
 
         uint32_t shadow_width = 4096;
         uint32_t shadow_height = 4096;
-
         
         std::array<Cascade, SHADOW_MAP_CASCADE_COUNT> cascades;
 

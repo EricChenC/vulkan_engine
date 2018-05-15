@@ -605,7 +605,7 @@ namespace ve {
         rasterizer.rasterizerDiscardEnable = VK_FALSE;
         rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
         rasterizer.lineWidth = 1.0f;
-        rasterizer.cullMode = VK_CULL_MODE_NONE;
+        rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
         rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         rasterizer.depthBiasEnable = VK_FALSE;
 
@@ -1245,6 +1245,7 @@ namespace ve {
         UniformMatrixBufferObject umo = {};
         umo.proj = camera_perspective_;
         umo.view = cmare_view_;
+        umo.lightDir = normalize(lightPos);
 
         void* data;
         vkMapMemory(device, uniformMatrixBufferMemory, 0, sizeof(umo), 0, &data);
@@ -1258,7 +1259,6 @@ namespace ve {
             csm.cascadeSplits[i] = cascades[i].splitDepth;
             csm.cascadeViewProjMat[i] = cascades[i].viewProjMatrix;
         }
-        csm.lightDir = normalize(-lightPos);
 
         void* csm_data;
         vkMapMemory(device, csmBufferMemory, 0, sizeof(csm), 0, &csm_data);
@@ -1359,7 +1359,7 @@ namespace ve {
         float FoV = initialFoV;// - 5 * glfwGetMouseWheel(); // Now GLFW 3 requires setting up a callback for this. It's a bit too complicated for this beginner's tutorial, so it's disabled instead.
 
         // Projection matrix : 45?Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
-        camera_perspective_ = clip * glm::perspective(FoV, 4.0f / 3.0f, camera_near_clip_, camera_far_clip_);
+        camera_perspective_ = clip * glm::perspective(45.0f, (float)swapChainExtent.width / (float)swapChainExtent.height, camera_near_clip_, camera_far_clip_);
         //ubo.proj[1][1] *= -1;
 
 
@@ -2002,7 +2002,7 @@ namespace ve {
 
             glm::vec3 lightDir = normalize(-lightPos);
             glm::mat4 lightViewMatrix = glm::lookAt(frustumCenter - lightDir * -minExtents.z, frustumCenter, glm::vec3(0.0f, 1.0f, 0.0f));
-            glm::mat4 lightOrthoMatrix = glm::ortho(minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, 0.0f, maxExtents.z - minExtents.z);
+            glm::mat4 lightOrthoMatrix = clip * glm::ortho(minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, 0.0f, maxExtents.z - minExtents.z);
 
             // Store split distance and matrix in cascade
             cascades[i].splitDepth = (camera_near_clip_ + splitDist * clipRange) * -1.0f;
