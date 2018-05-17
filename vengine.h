@@ -365,7 +365,7 @@ namespace ve {
         const int HEIGHT = 600;
 
         float camera_near_clip_ = 0.1f;
-        float camera_far_clip_ = 300.0f;
+        float camera_far_clip_ = 100.0f;
         glm::mat4 camera_perspective_;
         glm::mat4 cmare_view_;
 

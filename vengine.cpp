@@ -1935,7 +1935,7 @@ namespace ve {
         float cascadeSplits[SHADOW_MAP_CASCADE_COUNT];
 
         float nearClip = camera_near_clip_;
-        float farClip = camera_far_clip_;
+        float farClip = 1000;
         float clipRange = farClip - nearClip;
 
         float minZ = nearClip;
@@ -1971,7 +1971,11 @@ namespace ve {
             };
 
             // Project frustum corners into world space
-            glm::mat4 invCam = glm::inverse(camera_perspective_ * cmare_view_);
+            auto perspect = clip * glm::perspective(45.0f, (float)swapChainExtent.width / (float)swapChainExtent.height, camera_near_clip_, farClip);
+
+
+
+            glm::mat4 invCam = glm::inverse(perspect * cmare_view_);
             for (uint32_t i = 0; i < 8; i++) {
                 glm::vec4 invCorner = invCam * glm::vec4(frustumCorners[i], 1.0f);
                 frustumCorners[i] = invCorner / invCorner.w;
