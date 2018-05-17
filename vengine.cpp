@@ -1739,12 +1739,12 @@ namespace ve {
 
         // Per-cascade descriptor sets
         // Each descriptor set represents a single layer of the array texture
-        for (uint32_t i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++) {
-            VK_CHECK_RESULT(vkAllocateDescriptorSets(device, &allocInfo, &cascades[i].descriptorSet));
+        //for (uint32_t i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++) {
+            VK_CHECK_RESULT(vkAllocateDescriptorSets(device, &allocInfo, &depthDescriptorSet));
             VkWriteDescriptorSet descriptorWrites = {};
 
             descriptorWrites.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites.dstSet = cascades[i].descriptorSet;
+            descriptorWrites.dstSet = depthDescriptorSet;
             descriptorWrites.dstBinding = 0;
             descriptorWrites.dstArrayElement = 0;
             descriptorWrites.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -1754,7 +1754,7 @@ namespace ve {
             writeDescriptorSets.push_back(descriptorWrites);
 
             vkUpdateDescriptorSets(device, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, NULL);
-        }
+        //}
 
     }
 
@@ -1922,7 +1922,7 @@ namespace ve {
             renderPassBeginInfo.framebuffer = cascades[i].frameBuffer;
             vkCmdBeginRenderPass(shadowCommandbuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
             vkCmdBindPipeline(shadowCommandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipeline);
-            renderScene(shadowCommandbuffer, shadowPipelineLayout, cascades[i].descriptorSet, i);
+            renderScene(shadowCommandbuffer, shadowPipelineLayout, depthDescriptorSet, i);
             vkCmdEndRenderPass(shadowCommandbuffer);
         }
 

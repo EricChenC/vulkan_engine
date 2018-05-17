@@ -307,7 +307,6 @@ namespace ve {
         // Contains all resources required for a single shadow map cascade
         struct Cascade {
             VkFramebuffer frameBuffer;
-            VkDescriptorSet descriptorSet;
             VkImageView view;
 
             float splitDepth;
@@ -362,11 +361,11 @@ namespace ve {
 
 
     private:
-        const int WIDTH = 1920;
-        const int HEIGHT = 1080;
+        const int WIDTH = 800;
+        const int HEIGHT = 600;
 
         float camera_near_clip_ = 0.1f;
-        float camera_far_clip_ = 1000.0f;
+        float camera_far_clip_ = 300.0f;
         glm::mat4 camera_perspective_;
         glm::mat4 cmare_view_;
 
@@ -415,12 +414,15 @@ namespace ve {
         
         std::array<Cascade, SHADOW_MAP_CASCADE_COUNT> cascades;
 
+        VkDescriptorSet depthDescriptorSet;
+
+
         bool kFirstPress = true;
 
         const bool enableValidationLayers = true;
 
         // version 2
-        const std::string MODEL_PATH = "D:/project/vulkan_engine/media/models/shadow.obj";
+        const std::string MODEL_PATH = "D:/project/vulkan_engine/media/models/shadow_01.obj";
        
     };
 }
