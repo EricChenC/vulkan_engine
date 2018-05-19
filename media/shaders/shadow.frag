@@ -10,12 +10,14 @@ layout(location = 2) in vec4 viewPos;
 layout(location = 0) out vec4 outColor;
 
 
+#define pie 3.1415926
+
 // main routine
 void main()
 {
     // Material properties
-    vec3 diffuse = vec3(1.0, 1.0, 1.0);
-    vec3 ambient = vec3(0.2, 0.2, 0.0) * diffuse;
+    vec3 diffuse = vec3(1.0, 1.0, 1.0); // or use texture
+    vec3 ambient = vec3(0.2, 0.2, 0.2) * diffuse;
     vec3 specular = vec3(0.4, 0.4, 0.4);
     vec3 lightColor = vec3(1.0, 1.0, 1.0);
     
@@ -31,6 +33,9 @@ void main()
     
     float specularCos = clamp(dot(vp, r), 0, 1);
     
+    
+    // lambertian
+    // lightColor * (diffuse / pie) * (lightPower * diffuseCos)
     
     vec3 color = ambient
     + lightColor * lightPower * diffuse * diffuseCos
