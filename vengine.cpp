@@ -17,11 +17,6 @@ namespace std {
         }
     };
 
-    template<> struct hash<ve::VEngine::ShadowVertex> {
-        size_t operator()(ve::VEngine::ShadowVertex const& vertex) const {
-            return (hash<glm::vec3>()(vertex.pos));
-        }
-    };
 }
 
 static void onWindowResized(GLFWwindow* window, int width, int height) {
@@ -130,57 +125,17 @@ namespace ve {
     void VEngine::cleanup() {
         cleanupSwapChain();
 
-        for (auto info = texture_infos_.begin(); info != texture_infos_.end(); ++info) {
-            vkDestroyImage(device, *info->texture, nullptr);
-            vkFreeMemory(device, *info->texture_memory, nullptr);
-            vkDestroyImageView(device, *info->texture_view, nullptr);
-            vkDestroySampler(device, *info->sampler, nullptr);
-        }
-
-        vkDestroyImage(device, shadowImage, nullptr);
-        vkFreeMemory(device, shadowImageMemory, nullptr);
-        vkDestroyImageView(device, shadowImageView, nullptr);
-        vkDestroySampler(device, shadowImageSampler, nullptr);
-
-        vkDestroyDescriptorPool(device, descriptorPool, nullptr);
-        vkDestroyDescriptorPool(device, shadowDescriptorPool, nullptr);
-
-        vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
-        vkDestroyDescriptorSetLayout(device, shadowDescriptorSetLayout, nullptr);
-
-        vkDestroyBuffer(device, uniformMatrixBuffer, nullptr);
-        vkFreeMemory(device, uniformMatrixBufferMemory, nullptr);
-
-        vkDestroyBuffer(device, uniformNormalBuffer, nullptr);
-        vkFreeMemory(device, uniformNormalBufferMemory, nullptr);
-
-        vkDestroyBuffer(device, uniformNormalTextureBuffer, nullptr);
-        vkFreeMemory(device, uniformNormalTextureBufferMemory, nullptr);
-
-        vkDestroyBuffer(device, uniformSpecialBuffer, nullptr);
-        vkFreeMemory(device, uniformSpecialBufferMemory, nullptr);
-
-        vkDestroyBuffer(device, uniformSpecialTextureBuffer, nullptr);
-        vkFreeMemory(device, uniformSpecialTextureBufferMemory, nullptr);
-
         vkDestroyBuffer(device, indexBuffer, nullptr);
         vkFreeMemory(device, indexBufferMemory, nullptr);
 
         vkDestroyBuffer(device, vertexBuffer, nullptr);
         vkFreeMemory(device, vertexBufferMemory, nullptr);
 
-        vkDestroyBuffer(device, shadowVertexBuffer, nullptr);
-        vkFreeMemory(device, shadowVertexBufferMemory, nullptr);
-
-        vkDestroyBuffer(device, shadowIndexBuffer, nullptr);
-        vkFreeMemory(device, shadowIndexBufferMemory, nullptr);
-
-        vkDestroyBuffer(device, shadowUniformBuffer, nullptr);
-        vkFreeMemory(device, shadowUniformBufferMemory, nullptr);
+        vkDestroyBuffer(device, uniformMatrixBuffer, nullptr);
+        vkFreeMemory(device, uniformMatrixBufferMemory, nullptr);
 
         vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
         vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
-        vkDestroySemaphore(device, shadowSemaphore, nullptr);
 
         vkDestroyCommandPool(device, commandPool, nullptr);
 
@@ -196,7 +151,6 @@ namespace ve {
     void VEngine::Run()
     {
         loadModel();
-        loadShadowModel();
         initWindow();
         initVulkan();
         mainLoop();
@@ -226,21 +180,9 @@ namespace ve {
         createCommandPool();
         createRenderPass();
         createFramebuffers();
-        CreateShadowRenderPass();
-        CreateShadowFrameBuffer();
-
-        CreateShadowLayout();
-        CreateShadowPipeline();
-        CreateShadowVertexBuffer();
-        CreateShadowIndexBuffer();
-        CreateShadowUniformBuffer();
-        CreateShadowDescriptorPool();
-        CreateShadowDescriptorSet();
-        CreateShadowCommandBuffer();
 
         createDescriptorSetLayout();
         createGraphicsPipeline();
-        SetTextureInfo();
         createVertexBuffer();
         createIndexBuffer();
         createUniformBuffer();
@@ -270,19 +212,11 @@ namespace ve {
             vkDestroyFramebuffer(device, swapChainFramebuffers[i], nullptr);
         }
 
-        vkDestroyFramebuffer(device, shadowFramebuffers, nullptr);
-
         vkFreeCommandBuffers(device, commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
-        vkFreeCommandBuffers(device, commandPool, 1, &shadowCommandbuffer);
-
 
         vkDestroyPipeline(device, graphicsPipeline, nullptr);
         vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
         vkDestroyRenderPass(device, renderPass, nullptr);
-
-        vkDestroyPipeline(device, shadowPipeline, nullptr);
-        vkDestroyPipelineLayout(device, shadowPipelineLayout, nullptr);
-        vkDestroyRenderPass(device, shadowRenderPass, nullptr);
 
         for (size_t i = 0; i < swapChainImageViews.size(); i++) {
             vkDestroyImageView(device, swapChainImageViews[i], nullptr);
@@ -302,10 +236,6 @@ namespace ve {
         createGraphicsPipeline();
         createFramebuffers();
 
-        CreateShadowRenderPass();
-        CreateShadowFrameBuffer();
-        CreateShadowPipeline();
-        CreateShadowCommandBuffer();
         CreateCommandBuffers();
 
     }
@@ -881,54 +811,6 @@ namespace ve {
         }
     }
 
-    void VEngine::SetTextureInfo()
-    {
-
-        TextureInfo diffuse_info = {
-            TEXTURE_PATH,
-            &diffuseTexture,
-            &diffuseTextureMemory,
-            &diffuseTextureView,
-            &diffuseTextureSampler
-        };
-
-        TextureInfo specular_info = {
-            SPECULAR_TEXTURE_PATH,
-            &specularTexture,
-            &specularTextureMemory,
-            &specularTextureView,
-            &specularTextureSampler
-        };
-
-        TextureInfo bump_info = {
-            BUMP_TEXTURE_PATH,
-            &bumpTexture,
-            &bumpTextureMemory,
-            &bumpTextureView,
-            &bumpTextureSampler
-        };
-
-        TextureInfo cutoff_info = {
-            CUTOFF_TEXTURE_PATH,
-            &cutoffTexture,
-            &cutoffTextureMemory,
-            &cutoffTextureView,
-            &cutoffTextureSampler
-        };
-
-        texture_infos_.push_back(diffuse_info);
-        texture_infos_.push_back(specular_info);
-        texture_infos_.push_back(bump_info);
-        texture_infos_.push_back(cutoff_info);
-
-        for (auto info = texture_infos_.begin(); info != texture_infos_.end(); ++info) {
-            CreateTexture(info->texture_path, *info->texture, *info->texture_memory);
-            CreateTextureView(*info->texture_view, *info->texture);
-            CreateTextureSampler(*info->sampler);
-        }
-
-    }
-
     VkBool32 VEngine::findDepthFormat(VkPhysicalDevice physicalDevice, VkFormat *depthFormat) {
         // Since all depth formats may be optional, we need to find a suitable depth format to use
         // Start with the highest precision packed format
@@ -1135,39 +1017,6 @@ namespace ve {
         }
     }
 
-    void VEngine::loadShadowModel()
-    {
-        tinyobj::attrib_t attrib;
-        std::vector<tinyobj::shape_t> shapes;
-        std::vector<tinyobj::material_t> materials;
-        std::string err;
-
-        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, SHADOW_MODEL_PATH.c_str())) {
-            throw std::runtime_error(err);
-        }
-
-        std::unordered_map<ShadowVertex, uint32_t> uniqueVertices = {};
-
-        for (const auto& shape : shapes) {
-            for (const auto& index : shape.mesh.indices) {
-                ShadowVertex vertex = {};
-
-                vertex.pos = {
-                    attrib.vertices[3 * index.vertex_index + 0],
-                    attrib.vertices[3 * index.vertex_index + 1],
-                    attrib.vertices[3 * index.vertex_index + 2]
-                };
-
-                if (uniqueVertices.count(vertex) == 0) {
-                    uniqueVertices[vertex] = static_cast<uint32_t>(shadowVertices.size());
-                    shadowVertices.push_back(vertex);
-                }
-
-                shadowIndices.push_back(uniqueVertices[vertex]);
-            }
-        }
-    }
-
     void VEngine::createVertexBuffer() {
         VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
@@ -1212,43 +1061,12 @@ namespace ve {
 
     void VEngine::createUniformBuffer() {
         createBuffer(sizeof(UniformMatrixBufferObject), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformMatrixBuffer, uniformMatrixBufferMemory);
-        createBuffer(sizeof(UniformNormalParameters), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformNormalBuffer, uniformNormalBufferMemory);
-        createBuffer(sizeof(UniformNormalTextureParameters), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformNormalTextureBuffer, uniformNormalTextureBufferMemory);
-        createBuffer(sizeof(UniformSpecialParameters), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformSpecialBuffer, uniformSpecialBufferMemory);
-        createBuffer(sizeof(UniformSpecialTextureParameters), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformSpecialTextureBuffer, uniformSpecialTextureBufferMemory);
     }
 
     void VEngine::createDescriptorPool() {
-        std::array<VkDescriptorPoolSize, 10> poolSizes = {};
+        std::array<VkDescriptorPoolSize, 1> poolSizes = {};
         poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         poolSizes[0].descriptorCount = 1;
-
-        poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSizes[1].descriptorCount = 1;
-
-        poolSizes[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSizes[2].descriptorCount = 1;
-
-        poolSizes[3].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSizes[3].descriptorCount = 1;
-
-        poolSizes[4].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSizes[4].descriptorCount = 1;
-
-        poolSizes[5].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSizes[5].descriptorCount = 1;
-
-        poolSizes[6].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSizes[6].descriptorCount = 1;
-
-        poolSizes[7].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSizes[7].descriptorCount = 1;
-
-        poolSizes[8].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSizes[8].descriptorCount = 1;
-
-        poolSizes[9].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSizes[9].descriptorCount = 1;
 
         VkDescriptorPoolCreateInfo poolInfo = {};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -1278,53 +1096,8 @@ namespace ve {
         matrixBufferInfo.offset = 0;
         matrixBufferInfo.range = sizeof(UniformMatrixBufferObject);
 
-        VkDescriptorBufferInfo normalBufferInfo = {};
-        normalBufferInfo.buffer = uniformNormalBuffer;
-        normalBufferInfo.offset = 0;
-        normalBufferInfo.range = sizeof(UniformNormalParameters);
 
-        VkDescriptorBufferInfo normalTextureBufferInfo = {};
-        normalTextureBufferInfo.buffer = uniformNormalTextureBuffer;
-        normalTextureBufferInfo.offset = 0;
-        normalTextureBufferInfo.range = sizeof(UniformNormalTextureParameters);
-
-        VkDescriptorBufferInfo specialBufferInfo = {};
-        specialBufferInfo.buffer = uniformSpecialBuffer;
-        specialBufferInfo.offset = 0;
-        specialBufferInfo.range = sizeof(UniformSpecialParameters);
-
-        VkDescriptorBufferInfo specialTextureBufferInfo = {};
-        specialTextureBufferInfo.buffer = uniformSpecialTextureBuffer;
-        specialTextureBufferInfo.offset = 0;
-        specialTextureBufferInfo.range = sizeof(UniformSpecialTextureParameters);
-
-        VkDescriptorImageInfo diffuseTextureInfo = {};
-        diffuseTextureInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        diffuseTextureInfo.imageView = diffuseTextureView;
-        diffuseTextureInfo.sampler = diffuseTextureSampler;
-
-        VkDescriptorImageInfo specularTextureInfo = {};
-        specularTextureInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        specularTextureInfo.imageView = specularTextureView;
-        specularTextureInfo.sampler = specularTextureSampler;
-
-        VkDescriptorImageInfo bumpTextureInfo = {};
-        bumpTextureInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        bumpTextureInfo.imageView = bumpTextureView;
-        bumpTextureInfo.sampler = bumpTextureSampler;
-
-        VkDescriptorImageInfo cutoffTextureInfo = {};
-        cutoffTextureInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        cutoffTextureInfo.imageView = cutoffTextureView;
-        cutoffTextureInfo.sampler = cutoffTextureSampler;
-
-        VkDescriptorImageInfo shadowMapTextureInfo = {};
-        shadowMapTextureInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        shadowMapTextureInfo.imageView = shadowImageView;
-        shadowMapTextureInfo.sampler = shadowImageSampler;
-
-
-        std::array<VkWriteDescriptorSet, 10> descriptorWrites = {};
+        std::array<VkWriteDescriptorSet, 1> descriptorWrites = {};
 
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[0].dstSet = descriptorSet;
@@ -1334,77 +1107,6 @@ namespace ve {
         descriptorWrites[0].descriptorCount = 1;
         descriptorWrites[0].pBufferInfo = &matrixBufferInfo;
 
-        descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[1].dstSet = descriptorSet;
-        descriptorWrites[1].dstBinding = 1;
-        descriptorWrites[1].dstArrayElement = 0;
-        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrites[1].descriptorCount = 1;
-        descriptorWrites[1].pBufferInfo = &normalBufferInfo;
-
-        descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[2].dstSet = descriptorSet;
-        descriptorWrites[2].dstBinding = 2;
-        descriptorWrites[2].dstArrayElement = 0;
-        descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrites[2].descriptorCount = 1;
-        descriptorWrites[2].pBufferInfo = &normalTextureBufferInfo;
-
-        descriptorWrites[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[3].dstSet = descriptorSet;
-        descriptorWrites[3].dstBinding = 6;
-        descriptorWrites[3].dstArrayElement = 0;
-        descriptorWrites[3].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrites[3].descriptorCount = 1;
-        descriptorWrites[3].pBufferInfo = &specialBufferInfo;
-
-        descriptorWrites[4].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[4].dstSet = descriptorSet;
-        descriptorWrites[4].dstBinding = 7;
-        descriptorWrites[4].dstArrayElement = 0;
-        descriptorWrites[4].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrites[4].descriptorCount = 1;
-        descriptorWrites[4].pBufferInfo = &specialTextureBufferInfo;
-
-        descriptorWrites[5].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[5].dstSet = descriptorSet;
-        descriptorWrites[5].dstBinding = 3;
-        descriptorWrites[5].dstArrayElement = 0;
-        descriptorWrites[5].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[5].descriptorCount = 1;
-        descriptorWrites[5].pImageInfo = &diffuseTextureInfo;
-
-        descriptorWrites[6].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[6].dstSet = descriptorSet;
-        descriptorWrites[6].dstBinding = 4;
-        descriptorWrites[6].dstArrayElement = 0;
-        descriptorWrites[6].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[6].descriptorCount = 1;
-        descriptorWrites[6].pImageInfo = &specularTextureInfo;
-
-        descriptorWrites[7].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[7].dstSet = descriptorSet;
-        descriptorWrites[7].dstBinding = 5;
-        descriptorWrites[7].dstArrayElement = 0;
-        descriptorWrites[7].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[7].descriptorCount = 1;
-        descriptorWrites[7].pImageInfo = &bumpTextureInfo;
-
-        descriptorWrites[8].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[8].dstSet = descriptorSet;
-        descriptorWrites[8].dstBinding = 8;
-        descriptorWrites[8].dstArrayElement = 0;
-        descriptorWrites[8].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[8].descriptorCount = 1;
-        descriptorWrites[8].pImageInfo = &cutoffTextureInfo;
-
-        descriptorWrites[9].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[9].dstSet = descriptorSet;
-        descriptorWrites[9].dstBinding = 9;
-        descriptorWrites[9].dstArrayElement = 0;
-        descriptorWrites[9].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[9].descriptorCount = 1;
-        descriptorWrites[9].pImageInfo = &shadowMapTextureInfo;
 
         vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
     }
@@ -1509,51 +1211,12 @@ namespace ve {
 
         VK_CHECK_RESULT(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphore));
         VK_CHECK_RESULT(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphore));
-        VK_CHECK_RESULT(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &shadowSemaphore));
 
     }
 
     void VEngine::updateUniformBuffer() {
         
         camera_control();
-
-        UniformNormalParameters unp = {};
-        unp.diffuseColor = glm::vec4(1.0f);
-        unp.specularColor = glm::vec4(0.7f, 0.7f, 0.7f, 1.0f);
-        unp.diffuseRough = 0.95f;
-        unp.shininess = 40.0f;
-        unp.reflectivity = 0.2f;
-
-        void* normalData;
-        vkMapMemory(device, uniformNormalBufferMemory, 0, sizeof(unp), 0, &normalData);
-        memcpy(normalData, &unp, sizeof(unp));
-        vkUnmapMemory(device, uniformNormalBufferMemory);
-
-        UniformNormalTextureParameters untp = {};
-        untp.diffuseOffset = glm::vec2(0.0f, 0.0f);
-        untp.diffuseRepeat = glm::vec2(1.0f, 1.0f);
-        untp.specularOffset = glm::vec2(0.0f, 0.0f);
-        untp.specularRepeat = glm::vec2(1.0f, 1.0f);
-
-        void* normalTextureData;
-        vkMapMemory(device, uniformNormalTextureBufferMemory, 0, sizeof(untp), 0, &normalTextureData);
-        memcpy(normalTextureData, &untp, sizeof(untp));
-        vkUnmapMemory(device, uniformNormalTextureBufferMemory);
-
-        UniformSpecialParameters usp = {};
-        usp.cutOff = 0.05f;
-
-        void* specialData;
-        vkMapMemory(device, uniformSpecialBufferMemory, 0, sizeof(usp), 0, &specialData);
-        memcpy(specialData, &usp, sizeof(usp));
-        vkUnmapMemory(device, uniformSpecialBufferMemory);
-
-        UniformSpecialTextureParameters ustp = {};
-
-        void* specialTextureData;
-        vkMapMemory(device, uniformSpecialTextureBufferMemory, 0, sizeof(ustp), 0, &specialTextureData);
-        memcpy(specialTextureData, &ustp, sizeof(ustp));
-        vkUnmapMemory(device, uniformSpecialTextureBufferMemory);
 
     }
 
@@ -1664,44 +1327,7 @@ namespace ve {
             up                  // Head is up (set to 0,-1,0 to look upside-down)
         );
 
-
-        /*auto camera_direction = -direction;
-        auto light_direction = -lightPos;
-
-        auto r_plane = glm::normalize(glm::cross(light_direction, camera_direction));
-        auto l_plane = glm::normalize(glm::cross(camera_direction, light_direction));
-
-        auto up_plane = glm::normalize(glm::cross(r_plane, light_direction));
-        auto down_plane = glm::normalize(glm::cross(light_direction, r_plane));
-
-
-        auto  = camera_point * r_plane;*/
-
-
-
-
-
-
-        // spot light
-        /*   glm::mat4 depthProjectionMatrix = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
-        glm::mat4 depthViewMatrix = glm::lookAt(lightPos, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0f, 1.0f, 0.0f));*/
-
-
         // direction light
-
-        glm::mat4 depthProjectionMatrix = glm::ortho<float>(20.0, -20.0, -20.0, 20.0, -20.0, 40.0);
-        glm::mat4 depthViewMatrix = glm::lookAt(lightPos, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0f, 1.0f, 0.0f));
-
-        glm::mat4 depthModelMatrix = glm::translate(glm::mat4(1.0), -camera_point);
-
-        ubo.depthMVP = clip * depthProjectionMatrix * depthViewMatrix * depthModelMatrix;
-
-        void* uboData;
-        VK_CHECK_RESULT(vkMapMemory(device, shadowUniformBufferMemory, 0, sizeof(ShadowUBO), 0, &uboData));
-        memcpy(uboData, &ubo.depthMVP, sizeof(ShadowUBO));
-        vkUnmapMemory(device, shadowUniformBufferMemory);
-
-        umo.lightSpace = bias * ubo.depthMVP;
 
         umo.lightPos = lightPos;
 
@@ -1731,25 +1357,12 @@ namespace ve {
         VkSubmitInfo shadowSubmitInfo = {};
         shadowSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-        VkPipelineStageFlags shadowWaitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-        shadowSubmitInfo.waitSemaphoreCount = 1;
-        shadowSubmitInfo.pWaitSemaphores = &imageAvailableSemaphore;
-        shadowSubmitInfo.pWaitDstStageMask = shadowWaitStages;
-
-        shadowSubmitInfo.signalSemaphoreCount = 1;
-        shadowSubmitInfo.pSignalSemaphores = &shadowSemaphore;
-
-        shadowSubmitInfo.commandBufferCount = 1;
-        shadowSubmitInfo.pCommandBuffers = &shadowCommandbuffer;
-
-        VK_CHECK_RESULT(vkQueueSubmit(presentQueue, 1, &shadowSubmitInfo, VK_NULL_HANDLE));
-
         VkSubmitInfo submitInfo = {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
         VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_ALL_COMMANDS_BIT };
         submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = &shadowSemaphore;
+        submitInfo.pWaitSemaphores = &imageAvailableSemaphore;
         submitInfo.pWaitDstStageMask = waitStages;
 
         submitInfo.commandBufferCount = 1;
@@ -1792,440 +1405,6 @@ namespace ve {
         createDescriptorPool();
         createDescriptorSet();
         CreateCommandBuffers();
-
-        CreateShadowVertexBuffer();
-        CreateShadowIndexBuffer();
-        CreateShadowUniformBuffer();
-        CreateShadowDescriptorPool();
-        CreateShadowDescriptorSet();
-
-    }
-
-    void VEngine::CreateShadowFrameBuffer()
-    {
-        // For shadow mapping we only need a depth attachment
-        VkImageCreateInfo image = {};
-        image.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        image.imageType = VK_IMAGE_TYPE_2D;
-        image.extent.width = shadow_width;
-        image.extent.height = shadow_height;
-        image.extent.depth = 1;
-        image.mipLevels = 1;
-        image.arrayLayers = 1;
-        image.samples = VK_SAMPLE_COUNT_1_BIT;
-        image.tiling = VK_IMAGE_TILING_OPTIMAL;
-
-        image.format = depthFormat;																// Depth stencil attachment
-        image.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;		// We will sample directly from the depth attachment for the shadow mapping
-        VK_CHECK_RESULT(vkCreateImage(device, &image, nullptr, &shadowImage));
-
-        VkMemoryAllocateInfo memAlloc = {};
-        VkMemoryRequirements memReqs = {};
-
-        memAlloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        vkGetImageMemoryRequirements(device, shadowImage, &memReqs);
-        memAlloc.allocationSize = memReqs.size;
-
-        memAlloc.memoryTypeIndex = findMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-        VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, &shadowImageMemory));
-        VK_CHECK_RESULT(vkBindImageMemory(device, shadowImage, shadowImageMemory, 0));
-
-        VkImageViewCreateInfo depthStencilView = {};
-        depthStencilView.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        depthStencilView.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        depthStencilView.format = depthFormat;
-        depthStencilView.subresourceRange = {};
-        depthStencilView.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        depthStencilView.subresourceRange.baseMipLevel = 0;
-        depthStencilView.subresourceRange.levelCount = 1;
-        depthStencilView.subresourceRange.baseArrayLayer = 0;
-        depthStencilView.subresourceRange.layerCount = 1;
-        depthStencilView.image = shadowImage;
-        VK_CHECK_RESULT(vkCreateImageView(device, &depthStencilView, nullptr, &shadowImageView));
-
-        // Create sampler to sample from to depth attachment 
-        // Used to sample in the fragment shader for shadowed rendering
-        VkSamplerCreateInfo sampler = {};
-        sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-        sampler.magFilter = SHADOWMAP_FILTER;
-        sampler.minFilter = SHADOWMAP_FILTER;
-        sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-        sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-        sampler.addressModeV = sampler.addressModeU;
-        sampler.addressModeW = sampler.addressModeU;
-        sampler.mipLodBias = 0.0f;
-        sampler.maxAnisotropy = 10.0f;
-        sampler.minLod = 0.0f;
-        sampler.maxLod = 10.0f;
-        sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-      /*  sampler.compareEnable = VK_TRUE;
-        sampler.compareOp = VK_COMPARE_OP_LESS;*/
-
-
-        VK_CHECK_RESULT(vkCreateSampler(device, &sampler, nullptr, &shadowImageSampler));
-
-        // Create frame buffer
-        VkFramebufferCreateInfo fbufCreateInfo = {};
-        fbufCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        fbufCreateInfo.renderPass = shadowRenderPass;
-        fbufCreateInfo.attachmentCount = 1;
-        fbufCreateInfo.pAttachments = &shadowImageView;
-        fbufCreateInfo.width = shadow_width;
-        fbufCreateInfo.height = shadow_height;
-        fbufCreateInfo.layers = 1;
-
-        VK_CHECK_RESULT(vkCreateFramebuffer(device, &fbufCreateInfo, nullptr, &shadowFramebuffers));
-
-
-    }
-
-    void VEngine::CreateShadowRenderPass()
-    {
-        VkAttachmentDescription attachmentDescription = {};
-        attachmentDescription.format = depthFormat;
-        attachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
-        attachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;							// Clear depth at beginning of the render pass
-        attachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;						// We will read from depth, so it's important to store the depth attachment results
-        attachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        attachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        attachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;					// We don't care about initial layout of the attachment
-        attachmentDescription.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;// Attachment will be transitioned to shader read at render pass end
-
-        VkAttachmentReference depthReference = {};
-        depthReference.attachment = 0;
-        depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;			// Attachment will be used as depth/stencil during render pass
-
-        VkSubpassDescription subpass = {};
-        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass.colorAttachmentCount = 0;													// No color attachments
-        subpass.pDepthStencilAttachment = &depthReference;									// Reference to our depth attachment
-                                                                                            // Use subpass dependencies for layout transitions
-        std::array<VkSubpassDependency, 2> dependencies;
-
-        dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependencies[0].dstSubpass = 0;
-        dependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-        dependencies[0].dstStageMask = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-        dependencies[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        dependencies[0].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-        dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
-        dependencies[1].srcSubpass = 0;
-        dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
-        dependencies[1].srcStageMask = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-        dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-        dependencies[1].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-        dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
-        VkRenderPassCreateInfo renderPassCreateInfo = {};
-        renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        renderPassCreateInfo.attachmentCount = 1;
-        renderPassCreateInfo.pAttachments = &attachmentDescription;
-        renderPassCreateInfo.subpassCount = 1;
-        renderPassCreateInfo.pSubpasses = &subpass;
-        renderPassCreateInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
-        renderPassCreateInfo.pDependencies = dependencies.data();
-
-        VK_CHECK_RESULT(vkCreateRenderPass(device, &renderPassCreateInfo, nullptr, &shadowRenderPass));
-    }
-
-    void VEngine::CreateShadowLayout()
-    {
-
-        std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings;
-
-        VkDescriptorSetLayoutBinding ubo{
-            0,
-            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            1,
-            VK_SHADER_STAGE_VERTEX_BIT,
-            nullptr
-        };
-
-        setLayoutBindings.push_back(ubo);
-
-        VkDescriptorSetLayoutCreateInfo descriptorLayout = {};
-        descriptorLayout.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        descriptorLayout.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
-        descriptorLayout.pBindings = setLayoutBindings.data();
-
-        VK_CHECK_RESULT(vkCreateDescriptorSetLayout(device, &descriptorLayout, nullptr, &shadowDescriptorSetLayout));
-
-        VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo = {};
-        pPipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pPipelineLayoutCreateInfo.setLayoutCount = 1;
-        pPipelineLayoutCreateInfo.pSetLayouts = &shadowDescriptorSetLayout;
-
-        VK_CHECK_RESULT(vkCreatePipelineLayout(device, &pPipelineLayoutCreateInfo, nullptr, &shadowPipelineLayout));
-
-    }
-
-    void VEngine::CreateShadowVertexBuffer()
-    {
-        VkDeviceSize bufferSize = sizeof(shadowVertices[0]) * shadowVertices.size();
-
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
-        createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-
-        void* data;
-        VK_CHECK_RESULT(vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data));
-        memcpy(data, shadowVertices.data(), (size_t)bufferSize);
-        vkUnmapMemory(device, stagingBufferMemory);
-
-        createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, shadowVertexBuffer, shadowVertexBufferMemory);
-
-        copyBuffer(stagingBuffer, shadowVertexBuffer, bufferSize);
-
-        vkDestroyBuffer(device, stagingBuffer, nullptr);
-        vkFreeMemory(device, stagingBufferMemory, nullptr);
-
-    }
-
-    void VEngine::CreateShadowIndexBuffer()
-    {
-        VkDeviceSize bufferSize = sizeof(shadowIndices[0]) * shadowIndices.size();
-
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
-        createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-
-        void* data;
-        VK_CHECK_RESULT(vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data));
-        memcpy(data, shadowIndices.data(), (size_t)bufferSize);
-        vkUnmapMemory(device, stagingBufferMemory);
-
-        createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, shadowIndexBuffer, shadowIndexBufferMemory);
-
-        copyBuffer(stagingBuffer, shadowIndexBuffer, bufferSize);
-
-        vkDestroyBuffer(device, stagingBuffer, nullptr);
-        vkFreeMemory(device, stagingBufferMemory, nullptr);
-
-    }
-
-    void VEngine::CreateShadowUniformBuffer()
-    {
-        createBuffer(sizeof(ShadowUBO), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, shadowUniformBuffer, shadowUniformBufferMemory);
-    }
-
-    void VEngine::CreateShadowDescriptorPool()
-    {
-        std::array<VkDescriptorPoolSize, 1> poolSizes = {};
-        poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSizes[0].descriptorCount = 1;
-
-        VkDescriptorPoolCreateInfo poolInfo = {};
-        poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-        poolInfo.pPoolSizes = poolSizes.data();
-        poolInfo.maxSets = 1;
-
-        VK_CHECK_RESULT(vkCreateDescriptorPool(device, &poolInfo, nullptr, &shadowDescriptorPool));
-
-    }
-
-    void VEngine::CreateShadowDescriptorSet()
-    {
-        VkDescriptorSetLayout layouts[] = { shadowDescriptorSetLayout };
-        VkDescriptorSetAllocateInfo allocInfo = {};
-        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = shadowDescriptorPool;
-        allocInfo.descriptorSetCount = 1;
-        allocInfo.pSetLayouts = layouts;
-
-        VK_CHECK_RESULT(vkAllocateDescriptorSets(device, &allocInfo, &shadowDescriptorSet));
-
-        VkDescriptorBufferInfo matrixBufferInfo = {};
-        matrixBufferInfo.buffer = shadowUniformBuffer;
-        matrixBufferInfo.offset = 0;
-        matrixBufferInfo.range = sizeof(ShadowUBO);
-
-        std::array<VkWriteDescriptorSet, 1> descriptorWrites = {};
-
-        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[0].dstSet = shadowDescriptorSet;
-        descriptorWrites[0].dstBinding = 0;
-        descriptorWrites[0].dstArrayElement = 0;
-        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrites[0].descriptorCount = 1;
-        descriptorWrites[0].pBufferInfo = &matrixBufferInfo;
-
-
-        vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-    }
-
-    void VEngine::CreateShadowPipeline()
-    {
-        auto vertShaderCode = readFile("D:/project/vulkan_engine/media/shaders/offscreen.vert.spv");
-        auto fragShaderCode = readFile("D:/project/vulkan_engine/media/shaders/offscreen.frag.spv");
-
-        VkShaderModule shadowVertShaderModule = createShaderModule(vertShaderCode);
-        VkShaderModule shadowFragShaderModule = createShaderModule(fragShaderCode);
-
-        VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
-        vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-        vertShaderStageInfo.module = shadowVertShaderModule;
-        vertShaderStageInfo.pName = "main";
-
-        VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
-        fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-        fragShaderStageInfo.module = shadowFragShaderModule;
-        fragShaderStageInfo.pName = "main";
-        
-        VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
-
-        VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
-        vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-
-        auto bindingDescription = ShadowVertex::getBindingDescription();
-        auto attributeDescriptions = ShadowVertex::getAttributeDescriptions();
-
-        vertexInputInfo.vertexBindingDescriptionCount = 1;
-        vertexInputInfo.vertexAttributeDescriptionCount = 1;
-        vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-        vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
-
-        VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
-        inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-        inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        inputAssembly.primitiveRestartEnable = VK_FALSE;
-
-        VkPipelineViewportStateCreateInfo viewportState = {};
-        viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-        viewportState.viewportCount = 1;
-        viewportState.scissorCount = 1;
-
-        VkPipelineRasterizationStateCreateInfo rasterizer = {};
-        rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-        rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-        rasterizer.lineWidth = 1.0f;
-        rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-        rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-        rasterizer.depthBiasEnable = VK_TRUE;
-
-        VkPipelineMultisampleStateCreateInfo multisampling = {};
-        multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-        multisampling.sampleShadingEnable = VK_FALSE;
-        multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-
-        VkPipelineDepthStencilStateCreateInfo depthStencil = {};
-        depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-        depthStencil.depthTestEnable = VK_TRUE;
-        depthStencil.depthWriteEnable = VK_TRUE;
-        depthStencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
-        depthStencil.depthBoundsTestEnable = VK_FALSE;
-        depthStencil.stencilTestEnable = VK_FALSE;
-
-        VkPipelineColorBlendStateCreateInfo colorBlending = {};
-        colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-        colorBlending.attachmentCount = 0;
-
-        std::vector<VkDynamicState> dynamicStateEnables = {
-            VK_DYNAMIC_STATE_VIEWPORT,
-            VK_DYNAMIC_STATE_SCISSOR,
-            VK_DYNAMIC_STATE_DEPTH_BIAS
-        };
-
-        VkPipelineDynamicStateCreateInfo dynamicState = {};
-        dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-        dynamicState.dynamicStateCount = dynamicStateEnables.size();
-        dynamicState.pDynamicStates = dynamicStateEnables.data();
-
-        VkGraphicsPipelineCreateInfo pipelineInfo = {};
-        pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        pipelineInfo.stageCount = 2;
-        pipelineInfo.pStages = shaderStages;
-        pipelineInfo.pVertexInputState = &vertexInputInfo;
-        pipelineInfo.pInputAssemblyState = &inputAssembly;
-        pipelineInfo.pViewportState = &viewportState;
-        pipelineInfo.pRasterizationState = &rasterizer;
-        pipelineInfo.pMultisampleState = &multisampling;
-        pipelineInfo.pDepthStencilState = &depthStencil;
-        pipelineInfo.pColorBlendState = &colorBlending;
-        pipelineInfo.layout = shadowPipelineLayout;
-        pipelineInfo.renderPass = shadowRenderPass;
-        pipelineInfo.pDynamicState = &dynamicState;
-
-
-        VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &shadowPipeline)); 
-
-        vkDestroyShaderModule(device, shadowFragShaderModule, nullptr);
-        vkDestroyShaderModule(device, shadowVertShaderModule, nullptr);
-
-    }
-
-    void VEngine::CreateShadowCommandBuffer()
-    {
-
-        VkCommandBufferAllocateInfo allocInfo = {};
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.commandPool = commandPool;
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandBufferCount = 1;
-
-        VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &allocInfo, &shadowCommandbuffer));
-       
-        VkCommandBufferBeginInfo cmdBufInfo = {};
-        cmdBufInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        //cmdBufInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-
-        VkClearValue clearValues[1];
-        clearValues[0].depthStencil = { 1.0f, 0 };
-
-        VkRenderPassBeginInfo renderPassBeginInfo = {};
-        renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassBeginInfo.renderPass = shadowRenderPass;
-        renderPassBeginInfo.framebuffer = shadowFramebuffers;
-        renderPassBeginInfo.renderArea.offset.x = 0;
-        renderPassBeginInfo.renderArea.offset.y = 0;
-        renderPassBeginInfo.renderArea.extent.width = shadow_width;
-        renderPassBeginInfo.renderArea.extent.height = shadow_height;
-        renderPassBeginInfo.clearValueCount = 2;
-        renderPassBeginInfo.pClearValues = clearValues;
-
-        VK_CHECK_RESULT(vkBeginCommandBuffer(shadowCommandbuffer, &cmdBufInfo));
-
-        VkViewport viewport = {};
-        viewport.width = (float)shadow_width;
-        viewport.height = (float)shadow_height;
-        viewport.minDepth = 0;
-        viewport.maxDepth = 1;
-        
-        vkCmdSetViewport(shadowCommandbuffer, 0, 1, &viewport);
-
-        VkRect2D scissor = {};
-        scissor.offset.x = 0;
-        scissor.offset.y = 0;
-        scissor.extent.width = shadow_width;
-        scissor.extent.height = shadow_height;
-
-        vkCmdSetScissor(shadowCommandbuffer, 0, 1, &scissor);
-
-        // Set depth bias (aka "Polygon offset")
-        // Required to avoid shadow mapping artefacts
-        vkCmdSetDepthBias(
-            shadowCommandbuffer,
-            3.0f,
-            0.0f,
-            3.8f);
-
-        vkCmdBeginRenderPass(shadowCommandbuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-        vkCmdBindPipeline(shadowCommandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipeline);
-        vkCmdBindDescriptorSets(shadowCommandbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipelineLayout, 0, 1, &shadowDescriptorSet, 0, NULL);
-
-        VkDeviceSize offsets[1] = { 0 };
-        vkCmdBindVertexBuffers(shadowCommandbuffer, 0, 1, &shadowVertexBuffer, offsets);
-        vkCmdBindIndexBuffer(shadowCommandbuffer, shadowIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-        vkCmdDrawIndexed(shadowCommandbuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
-
-        vkCmdEndRenderPass(shadowCommandbuffer);
-
-        VK_CHECK_RESULT(vkEndCommandBuffer(shadowCommandbuffer));
 
     }
 
