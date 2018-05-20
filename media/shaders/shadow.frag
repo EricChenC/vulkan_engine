@@ -5,6 +5,7 @@
 layout(location = 0) in vec4 viewNormal;
 layout(location = 1) in vec4 viewLightDir;
 layout(location = 2) in vec4 viewPos;
+layout(location = 3) in vec4 worldNormal;
 
 
 layout(location = 0) out vec4 outColor;
@@ -17,11 +18,11 @@ void main()
 {
     // Material properties
     vec3 diffuse = vec3(1.0, 1.0, 1.0); // or use texture
-    vec3 ambient = vec3(0.2, 0.2, 0.2) * diffuse;
+    vec3 ambient = vec3(0.4, 0.4, 0.4) * diffuse;
     vec3 specular = vec3(0.4, 0.4, 0.4);
     vec3 lightColor = vec3(1.0, 1.0, 1.0);
     
-    float lightPower = 1.0f;
+    float lightPower = 1.2f;
     
     vec3 vl = normalize(viewLightDir.xyz);
     vec3 vn = normalize(viewNormal.xyz);
@@ -33,13 +34,16 @@ void main()
     
     float specularCos = clamp(dot(vp, r), 0, 1);
     
+    float am = dot(vec4(0.4, 0.0, 0.0, 1.0), worldNormal);
+    
+    ambient *= am; // for fixed cube edge can't see problem
     
     // lambertian
     // lightColor * (diffuse / pie) * (lightPower * diffuseCos)
     
     vec3 color = ambient
     + lightColor * lightPower * diffuse * diffuseCos
-    + lightColor * lightPower * specular * pow(specularCos, 20);
+    + lightColor * lightPower * specular * pow(specularCos, 10);
     
     outColor = vec4(color, 1.0);
     

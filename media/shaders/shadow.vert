@@ -19,7 +19,7 @@ layout(location = 2) in vec2 inTexcoord;
 layout(location = 0) out vec4 viewNormal;
 layout(location = 1) out vec4 viewLightDir;
 layout(location = 2) out vec4 viewPos;
-
+layout(location = 3) out vec4 worldNormal;
 
 
 out gl_PerVertex {
@@ -31,6 +31,8 @@ void main()
 {
     gl_Position =  ubo.proj * ubo.view * mt.model * vec4(inPosition, 1.0);
 
+    worldNormal = mt.model * vec4(inNormal, 0.0);
+    
     viewNormal = ubo.view * mt.model * vec4(inNormal, 0.0);
     
     viewLightDir =  ubo.view * vec4(ubo.lightPos, 0.0);
