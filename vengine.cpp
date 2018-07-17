@@ -188,7 +188,7 @@ namespace ve {
         createUniformBuffer();
         createDescriptorPool();
         createDescriptorSet();
-        CreateCommandBuffers();
+        createCommandBuffers();
 
     }
 
@@ -236,7 +236,7 @@ namespace ve {
         createGraphicsPipeline();
         createFramebuffers();
 
-        CreateCommandBuffers();
+        createCommandBuffers();
 
     }
 
@@ -737,7 +737,7 @@ namespace ve {
         }
     }
 
-    void VEngine::CreateCommandBuffers()
+    void VEngine::createCommandBuffers()
     {
 
         commandBuffers.resize(swapChainFramebuffers.size());
@@ -1346,7 +1346,7 @@ namespace ve {
         uint32_t imageIndex;
         VkResult result = vkAcquireNextImageKHR(device, swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 
-       /* if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        /*if (result == VK_ERROR_OUT_OF_DATE_KHR) {
             recreateSwapChain();
             return;
         }
@@ -1387,12 +1387,12 @@ namespace ve {
 
         VK_CHECK_RESULT(vkQueuePresentKHR(presentQueue, &presentInfo));
 
-        //if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-        //    recreateSwapChain();
-        //}
-        //else if (result != VK_SUCCESS) {
-        //    throw std::runtime_error("failed to present swap chain image!");
-        //}
+        /*if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+            recreateSwapChain();
+        }
+        else if (result != VK_SUCCESS) {
+            throw std::runtime_error("failed to present swap chain image!");
+        }*/
 
         VK_CHECK_RESULT(vkQueueWaitIdle(presentQueue));
     }
@@ -1404,7 +1404,7 @@ namespace ve {
         createUniformBuffer();
         createDescriptorPool();
         createDescriptorSet();
-        CreateCommandBuffers();
+        createCommandBuffers();
 
     }
 

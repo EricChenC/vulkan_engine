@@ -81,7 +81,7 @@ namespace ve {
         void createUniformBuffer();
         void createDescriptorPool();
         void createDescriptorSet();
-        void CreateCommandBuffers();
+        void createCommandBuffers();
 
         void createSemaphores();
         void updateUniformBuffer();
@@ -278,7 +278,7 @@ namespace ve {
         const bool enableValidationLayers = true;
 
         // version 2
-        const std::string MODEL_PATH = "D:/project/vulkan_engine/media/models/light_test.obj";
+        const std::string MODEL_PATH = "D:/project/vulkan_engine/media/models/shadow.obj";
 
        
     };
