@@ -143,20 +143,20 @@ void main()
     outFragColor = vec4(color, 1.0f);
     
     // Color cascades (if enabled)
-    switch(cascadeIndex) {
-        case 0 : 
-            outFragColor.rgb *= vec3(1.0f, 0.25f, 0.25f);
-            break;
-        case 1 : 
-            outFragColor.rgb *= vec3(0.25f, 1.0f, 0.25f);
-            break;
-        case 2 : 
-            outFragColor.rgb *= vec3(0.25f, 0.25f, 1.0f);
-            break;
-        case 3 : 
-            outFragColor.rgb *= vec3(1.0f, 1.0f, 0.25f);
-            break;
-    }
+//    switch(cascadeIndex) {
+//        case 0 : 
+//            outFragColor.rgb *= vec3(1.0f, 0.25f, 0.25f);
+//            break;
+//        case 1 : 
+//            outFragColor.rgb *= vec3(0.25f, 1.0f, 0.25f);
+//            break;
+//        case 2 : 
+//            outFragColor.rgb *= vec3(0.25f, 0.25f, 1.0f);
+//            break;
+//        case 3 : 
+//            outFragColor.rgb *= vec3(1.0f, 1.0f, 0.25f);
+//            break;
+//    }
     
     
     

@@ -365,7 +365,7 @@ namespace ve {
         const int HEIGHT = 600;
 
         float camera_near_clip_ = 0.1f;
-        float camera_far_clip_ = 100.0f;
+        float camera_far_clip_ = 1000.0f;
         glm::mat4 camera_perspective_;
         glm::mat4 cmare_view_;
 
@@ -409,8 +409,8 @@ namespace ve {
             0.0, 0.0, 0.5, 0.0,
             0.0, 0.0, 0.5, 1.0 };
 
-        uint32_t shadow_width = 4096;
-        uint32_t shadow_height = 4096;
+        uint32_t shadow_width = 2048;
+        uint32_t shadow_height = 2048;
         
         std::array<Cascade, SHADOW_MAP_CASCADE_COUNT> cascades;
 
@@ -422,7 +422,7 @@ namespace ve {
         const bool enableValidationLayers = true;
 
         // version 2
-        const std::string MODEL_PATH = "D:/project/vulkan_engine/media/models/shadow_01.obj";
+        const std::string MODEL_PATH = "D:/project/vulkan_engine/media/models/CH_building1.obj";
        
     };
 }
