@@ -162,6 +162,8 @@ namespace ve {
         bool hasStencilComponent(VkFormat format);
         VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
         void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+		void createTestImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+
         void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
         void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
         void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
@@ -212,9 +214,13 @@ namespace ve {
 
         VkCommandPool commandPool;
 
-        VkImage depthImage;
-        VkDeviceMemory depthImageMemory;
-        VkImageView depthImageView;
+        VkImage testImage;
+        VkDeviceMemory testImageMemory;
+        VkImageView testImageView;
+
+		VkImage depthImage;
+		VkDeviceMemory depthImageMemory;
+		VkImageView depthImageView;
 
         std::vector<Vertex> vertices;
         std::vector<uint32_t> indices;
