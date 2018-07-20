@@ -9,6 +9,7 @@ layout(location = 3) in vec4 worldNormal;
 
 
 layout(location = 0) out vec4 outColor;
+layout(location = 1) out vec4 outColor1;
 
 
 #define pie 3.1415926
@@ -46,5 +47,7 @@ void main()
     + lightColor * lightPower * specular * pow(specularCos, 10);
     
     outColor = vec4(color, 1.0);
+
+	outColor1 = vec4(color.g, color.r, color.b, 1.0);
     
  }
