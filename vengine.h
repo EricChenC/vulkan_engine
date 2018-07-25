@@ -187,6 +187,17 @@ namespace ve {
 
         glm::mat4 GetOrthoMatrix(float left, float right, float bottom, float top, float near, float far);
 
+        void insertImageMemoryBarrier(
+            VkCommandBuffer cmdbuffer,
+            VkImage image,
+            VkAccessFlags srcAccessMask,
+            VkAccessFlags dstAccessMask,
+            VkImageLayout oldImageLayout,
+            VkImageLayout newImageLayout,
+            VkPipelineStageFlags srcStageMask,
+            VkPipelineStageFlags dstStageMask,
+            VkImageSubresourceRange subresourceRange);;
+
     private:
         GLFWwindow* window;
 
@@ -237,6 +248,8 @@ namespace ve {
 
         VkSemaphore imageAvailableSemaphore;
         VkSemaphore renderFinishedSemaphore;
+
+        uint32_t imageIndex;
 
 
     private:
