@@ -33,6 +33,9 @@ namespace ve {
 
     VEngine::~VEngine()
     {
+
+
+
     }
 
 
@@ -137,6 +140,9 @@ namespace ve {
         vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
         vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
 
+        vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
+        vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+
         vkDestroyCommandPool(device, commandPool, nullptr);
 
         vkDestroyDevice(device, nullptr);
@@ -197,6 +203,9 @@ namespace ve {
             glfwPollEvents();
 
             updateUniformBuffer();
+
+            SaveOutputTexture();
+
             drawFrame();
         }
 
@@ -415,7 +424,7 @@ namespace ve {
     }
 
     void VEngine::createRenderPass() {
-		std::array<VkAttachmentDescription, 3> attachments{};
+		std::array<VkAttachmentDescription, 2> attachments{};
 		attachments[0].format = swapChainImageFormat;
 		attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
 		attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -425,35 +434,25 @@ namespace ve {
 		attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 		attachments[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-		attachments[1].format = swapChainImageFormat;
+		attachments[1].format = depthFormat;
 		attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
 		attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 		attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		attachments[1].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-		attachments[2].format = depthFormat;
-		attachments[2].samples = VK_SAMPLE_COUNT_1_BIT;
-		attachments[2].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		attachments[2].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		attachments[2].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		attachments[2].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		attachments[2].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		attachments[2].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-        VkAttachmentReference colorAttachmentRef[2];
+        VkAttachmentReference colorAttachmentRef[1];
 		colorAttachmentRef[0] = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
-		colorAttachmentRef[1] = { 1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
 
         VkAttachmentReference depthAttachmentRef = {};
-        depthAttachmentRef.attachment = 2;
+        depthAttachmentRef.attachment = 1;
         depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
         VkSubpassDescription subpass = {};
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass.colorAttachmentCount = 2;
+        subpass.colorAttachmentCount = 1;
         subpass.pColorAttachments = colorAttachmentRef;
         subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
@@ -656,7 +655,7 @@ namespace ve {
         depthStencil.depthBoundsTestEnable = VK_FALSE;
         depthStencil.stencilTestEnable = VK_FALSE;
 
-		std::array<VkPipelineColorBlendAttachmentState, 2> colorBlendAttachment = {};
+		std::array<VkPipelineColorBlendAttachmentState, 1> colorBlendAttachment = {};
         colorBlendAttachment[0].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 		colorBlendAttachment[0].blendEnable = VK_FALSE;
 		colorBlendAttachment[0].colorBlendOp = VK_BLEND_OP_ADD;
@@ -666,20 +665,11 @@ namespace ve {
 		colorBlendAttachment[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
 		colorBlendAttachment[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
 
-		colorBlendAttachment[1].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-		colorBlendAttachment[1].blendEnable = VK_FALSE;
-		colorBlendAttachment[1].colorBlendOp = VK_BLEND_OP_ADD;
-		colorBlendAttachment[1].srcColorBlendFactor = VK_BLEND_FACTOR_SRC_COLOR;
-		colorBlendAttachment[1].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
-		colorBlendAttachment[1].alphaBlendOp = VK_BLEND_OP_ADD;
-		colorBlendAttachment[1].srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-		colorBlendAttachment[1].dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-
         VkPipelineColorBlendStateCreateInfo colorBlending = {};
         colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
         colorBlending.logicOpEnable = VK_FALSE;
         colorBlending.logicOp = VK_LOGIC_OP_COPY;
-        colorBlending.attachmentCount = 2;
+        colorBlending.attachmentCount = 1;
         colorBlending.pAttachments = colorBlendAttachment.data();
         colorBlending.blendConstants[0] = 0.0f;
         colorBlending.blendConstants[1] = 0.0f;
@@ -730,16 +720,12 @@ namespace ve {
     void VEngine::createFramebuffers() {
         swapChainFramebuffers.resize(swapChainImageViews.size());
 
-		createTestImage(swapChainExtent.width, swapChainExtent.height, swapChainImageFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, testImage, testImageMemory);
-		testImageView = createImageView(testImage, swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
-
         createImage(swapChainExtent.width, swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
         depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 
         for (size_t i = 0; i < swapChainImageViews.size(); i++) {
-            std::array<VkImageView, 3> attachments = {
+            std::array<VkImageView, 2> attachments = {
                 swapChainImageViews[i],
-				testImageView,
                 depthImageView
             };
 
@@ -787,10 +773,9 @@ namespace ve {
             renderPassInfo.renderArea.offset = { 0, 0 };
             renderPassInfo.renderArea.extent = swapChainExtent;
 
-            std::array<VkClearValue, 3> clearValues = {};
+            std::array<VkClearValue, 2> clearValues = {};
             clearValues[0].color = { 0.2f, 0.2f, 0.2f, 1.0f };
-			clearValues[1].color = { 0.2f, 0.5f, 0.2f, 1.0f };
-            clearValues[2].depthStencil = { 1.0f, 0 };
+            clearValues[1].depthStencil = { 1.0f, 0 };
 
             renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
             renderPassInfo.pClearValues = clearValues.data();
@@ -1365,6 +1350,7 @@ namespace ve {
             RecreateBufer();
         }
 
+
         float FoV = initialFoV;// - 5 * glfwGetMouseWheel(); // Now GLFW 3 requires setting up a callback for this. It's a bit too complicated for this beginner's tutorial, so it's disabled instead.
 
 
@@ -1463,6 +1449,15 @@ namespace ve {
         createDescriptorSet();
         createCommandBuffers();
 
+    }
+
+    void VEngine::SaveOutputTexture()
+    {
+        if (glfwGetKey(window, GLFW_KEY_F4) == GLFW_PRESS) {
+            std::cout << "save texture \n";
+
+
+        }
     }
 
     VkShaderModule VEngine::createShaderModule(const std::vector<char>& code) {

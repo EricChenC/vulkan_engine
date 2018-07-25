@@ -90,6 +90,8 @@ namespace ve {
 
         void RecreateBufer();
 
+        void SaveOutputTexture();
+
 
     public:
         struct UniformMatrixBufferObject {
@@ -208,15 +210,10 @@ namespace ve {
         std::vector<VkFramebuffer> swapChainFramebuffers;
 
         VkRenderPass renderPass;
-        VkDescriptorSetLayout descriptorSetLayout;
         VkPipelineLayout pipelineLayout;
         VkPipeline graphicsPipeline;
 
         VkCommandPool commandPool;
-
-        VkImage testImage;
-        VkDeviceMemory testImageMemory;
-        VkImageView testImageView;
 
 		VkImage depthImage;
 		VkDeviceMemory depthImageMemory;
@@ -232,6 +229,7 @@ namespace ve {
         VkBuffer uniformMatrixBuffer;
         VkDeviceMemory uniformMatrixBufferMemory;
 
+        VkDescriptorSetLayout descriptorSetLayout;
         VkDescriptorPool descriptorPool;
         VkDescriptorSet descriptorSet;
 
