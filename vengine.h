@@ -90,8 +90,8 @@ namespace ve {
 
         void RecreateBufer();
 
-        void SaveOutputTexture();
-
+        void SaveOutputColorTexture(const std::string& path);
+        void SaveOutputDepthTexture(const std::string& path);
 
     public:
         struct UniformMatrixBufferObject {

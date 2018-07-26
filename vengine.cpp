@@ -9,6 +9,8 @@
 
 #define SHADOWMAP_FILTER VK_FILTER_LINEAR
 
+#include <vector>
+
 
 namespace std {
     template<> struct hash<ve::VEngine::Vertex> {
@@ -204,7 +206,6 @@ namespace ve {
 
             updateUniformBuffer();
 
-            SaveOutputTexture();
 
             drawFrame();
         }
@@ -441,7 +442,7 @@ namespace ve {
 		attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		attachments[1].finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 
         VkAttachmentReference colorAttachmentRef[1];
 		colorAttachmentRef[0] = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
@@ -720,7 +721,16 @@ namespace ve {
     void VEngine::createFramebuffers() {
         swapChainFramebuffers.resize(swapChainImageViews.size());
 
-        createImage(swapChainExtent.width, swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
+        createImage(
+            swapChainExtent.width, 
+            swapChainExtent.height, 
+            depthFormat, 
+            VK_IMAGE_TILING_OPTIMAL, 
+            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, 
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
+            depthImage, 
+            depthImageMemory);
+
         depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 
         for (size_t i = 0; i < swapChainImageViews.size(); i++) {
@@ -1260,6 +1270,15 @@ namespace ve {
         
         camera_control();
 
+        if (glfwGetKey(window, GLFW_KEY_F4) == GLFW_PRESS) {
+
+            auto color_file_name = "D:/project/vulkan_engine/build/color.ppm";
+            auto depth_file_name = "D:/project/vulkan_engine/build/depth.ppm";
+
+            SaveOutputColorTexture(color_file_name);
+            SaveOutputDepthTexture(depth_file_name);
+        }
+
     }
 
     void VEngine::camera_control()
@@ -1450,14 +1469,9 @@ namespace ve {
 
     }
 
-    void VEngine::SaveOutputTexture()
+    void VEngine::SaveOutputColorTexture(const std::string& path)
     {
-        if (glfwGetKey(window, GLFW_KEY_F4) == GLFW_PRESS) {
-
-            auto filename = "D:/project/vulkan_engine/build/color.ppm";
-
-            std::cout << "save texture \n";
-
+        
             bool supportsBlit = true;
 
             // Check blit support for source and destination
@@ -1471,7 +1485,7 @@ namespace ve {
             }
 
             // Check if the device supports blitting to linear images 
-            vkGetPhysicalDeviceFormatProperties(physicalDevice, VK_FORMAT_R8G8B8A8_UNORM, &formatProps);
+            vkGetPhysicalDeviceFormatProperties(physicalDevice, swapChainImageFormat, &formatProps);
             if (!(formatProps.linearTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
                 std::cerr << "Device does not support blitting to linear tiled images, using copy instead of blit!" << std::endl;
                 supportsBlit = false;
@@ -1487,7 +1501,7 @@ namespace ve {
 
             imageCreateCI.imageType = VK_IMAGE_TYPE_2D;
             // Note that vkCmdBlitImage (if supported) will also do format conversions if the swapchain color format would differ
-            imageCreateCI.format = VK_FORMAT_R8G8B8A8_UNORM;
+            imageCreateCI.format = swapChainImageFormat;
             imageCreateCI.extent.width = WIDTH;
             imageCreateCI.extent.height = HEIGHT;
             imageCreateCI.extent.depth = 1;
@@ -1649,7 +1663,7 @@ namespace ve {
             vkMapMemory(device, dstImageMemory, 0, VK_WHOLE_SIZE, 0, (void**)&data);
             data += subResourceLayout.offset;
 
-            std::ofstream file(filename, std::ios::out | std::ios::binary);
+            std::ofstream file(path, std::ios::out | std::ios::binary);
 
             // ppm header
             file << "P6\n" << WIDTH << "\n" << HEIGHT << "\n" << 255 << "\n";
@@ -1664,7 +1678,12 @@ namespace ve {
                 colorSwizzle = (std::find(formatsBGR.begin(), formatsBGR.end(), swapChainImageFormat) != formatsBGR.end());
             }
 
-            // ppm binary pixel data
+            auto image_size = HEIGHT * WIDTH;
+
+
+            std::vector<char> datas;
+
+
             for (uint32_t y = 0; y < HEIGHT; y++)
             {
                 unsigned int *row = (unsigned int*)data;
@@ -1672,18 +1691,33 @@ namespace ve {
                 {
                     if (colorSwizzle)
                     {
-                        file.write((char*)row + 2, 1);
+                        /*file.write((char*)row + 2, 1);
                         file.write((char*)row + 1, 1);
-                        file.write((char*)row, 1);
+                        file.write((char*)row, 1);*/
+
+                        datas.push_back(row[2]);
+                        datas.push_back(row[1]);
+                        datas.push_back(row[0]);
                     }
                     else
                     {
-                        file.write((char*)row, 3);
+                        //file.write((char*)row, 3);
+
+                        datas.push_back(row[0]);
+                        datas.push_back(row[1]);
+                        datas.push_back(row[2]);
+
+
                     }
                     row++;
                 }
                 data += subResourceLayout.rowPitch;
             }
+
+
+            file.write(datas.data(), datas.size());
+
+
             file.close();
 
             std::cout << "Screenshot saved to disk" << std::endl;
@@ -1693,7 +1727,89 @@ namespace ve {
             vkFreeMemory(device, dstImageMemory, nullptr);
             vkDestroyImage(device, dstImage, nullptr);
 
+    }
+
+    void VEngine::SaveOutputDepthTexture(const std::string& path)
+    {
+
+        VkDeviceSize size = WIDTH * HEIGHT * 4;
+        VkBuffer dstBuffer;
+        VkDeviceMemory dstMemory;
+
+        createBuffer(
+            size,
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT, 
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+            dstBuffer,
+            dstMemory);
+
+        VkCommandBuffer copyCmd = beginSingleTimeCommands();
+       
+        // depth format -> VK_FORMAT_D32_SFLOAT_S8_UINT
+        VkBufferImageCopy region = {};
+        region.bufferOffset = 0;
+        region.bufferImageHeight = 0;
+        region.bufferRowLength = 0;
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        region.imageSubresource.mipLevel = 0;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.layerCount = 1;
+        region.imageOffset = VkOffset3D{ 0, 0, 0 };
+        region.imageExtent = VkExtent3D{ swapChainExtent.width, swapChainExtent.height, 1};
+        
+
+        vkCmdCopyImageToBuffer(
+            copyCmd,
+            depthImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            dstBuffer,
+            1,
+            &region
+        );
+
+        endSingleTimeCommands(copyCmd);
+
+
+        // Map image memory so we can start copying from it
+        void *out_data;
+        void *data;
+        vkMapMemory(device, dstMemory, 0, size, 0, &data);
+        memcpy(out_data, data, size);
+        vkUnmapMemory(device, dstMemory);
+
+
+        void* data;
+        vkMapMemory(device, uniformMatrixBufferMemory, 0, sizeof(umo), 0, &data);
+        memcpy(data, &umo, sizeof(umo));
+        vkUnmapMemory(device, uniformMatrixBufferMemory);
+
+
+        std::ofstream file(path, std::ios::out | std::ios::binary);
+
+        // ppm header
+        file << "P6\n" << WIDTH << "\n" << HEIGHT << "\n" << 255 << "\n";
+      
+        // HEIGHT 600
+        // WIDTH 800
+        std::vector<char> datas;
+        for (uint32_t y = 0; y < HEIGHT; y++)
+        {
+            float *row = (float*)data;
+            for (uint32_t x = 0; x < WIDTH; x++)
+            {
+                datas.push_back(row[2] * 255); // r 
+                datas.push_back(row[2] * 255); // g
+                datas.push_back(row[2] * 255); // b
+                
+                row++;
+            }
+            //out_data += 800 * 4;
         }
+
+        file.write(datas.data(), datas.size());
+
+        file.close();
+       
+
     }
 
     VkShaderModule VEngine::createShaderModule(const std::vector<char>& code) {
