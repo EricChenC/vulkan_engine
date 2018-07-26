@@ -186,17 +186,8 @@ namespace ve {
         std::vector<char> readFile(const std::string& filename);
 
         glm::mat4 GetOrthoMatrix(float left, float right, float bottom, float top, float near, float far);
-
-        void insertImageMemoryBarrier(
-            VkCommandBuffer cmdbuffer,
-            VkImage image,
-            VkAccessFlags srcAccessMask,
-            VkAccessFlags dstAccessMask,
-            VkImageLayout oldImageLayout,
-            VkImageLayout newImageLayout,
-            VkPipelineStageFlags srcStageMask,
-            VkPipelineStageFlags dstStageMask,
-            VkImageSubresourceRange subresourceRange);;
+        uint8_t MapColor(float f);
+        glm::vec3 ColorWheel(float normalizeHue);
 
     private:
         GLFWwindow* window;
@@ -295,7 +286,7 @@ namespace ve {
         const bool enableValidationLayers = true;
 
         // version 2
-        const std::string MODEL_PATH = "D:/project/vulkan_engine/media/models/shadow.obj";
+        const std::string MODEL_PATH = "D:/project/vulkan_engine/media/models/shadow_01.obj";
 
        
     };

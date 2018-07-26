@@ -4,6 +4,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
@@ -425,27 +428,27 @@ namespace ve {
     }
 
     void VEngine::createRenderPass() {
-		std::array<VkAttachmentDescription, 2> attachments{};
-		attachments[0].format = swapChainImageFormat;
-		attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
-		attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		attachments[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        std::array<VkAttachmentDescription, 2> attachments{};
+        attachments[0].format = swapChainImageFormat;
+        attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+        attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachments[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-		attachments[1].format = depthFormat;
-		attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
-		attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		attachments[1].finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        attachments[1].format = depthFormat;
+        attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+        attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachments[1].finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 
         VkAttachmentReference colorAttachmentRef[1];
-		colorAttachmentRef[0] = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+        colorAttachmentRef[0] = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
 
         VkAttachmentReference depthAttachmentRef = {};
         depthAttachmentRef.attachment = 1;
@@ -564,7 +567,7 @@ namespace ve {
         std::array<VkDescriptorSetLayoutBinding, 10> bindings = {
             uboLayoutBinding, usvLayoutBinding, usfLayoutBinding, specialLayoutBinding, specialTextureLayoutBinding,
             samplerLayoutBinding, specularSamplerLayoutBinding, bumpSamplerLayoutBinding, cutoffSamplerLayoutBinding,
-            shadowMapSamplerLayoutBinding};
+            shadowMapSamplerLayoutBinding };
 
         VkDescriptorSetLayoutCreateInfo layoutInfo = {};
         layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -656,15 +659,15 @@ namespace ve {
         depthStencil.depthBoundsTestEnable = VK_FALSE;
         depthStencil.stencilTestEnable = VK_FALSE;
 
-		std::array<VkPipelineColorBlendAttachmentState, 1> colorBlendAttachment = {};
+        std::array<VkPipelineColorBlendAttachmentState, 1> colorBlendAttachment = {};
         colorBlendAttachment[0].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-		colorBlendAttachment[0].blendEnable = VK_FALSE;
-		colorBlendAttachment[0].colorBlendOp = VK_BLEND_OP_ADD;
-		colorBlendAttachment[0].srcColorBlendFactor = VK_BLEND_FACTOR_SRC_COLOR;
-		colorBlendAttachment[0].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
-		colorBlendAttachment[0].alphaBlendOp = VK_BLEND_OP_ADD;
-		colorBlendAttachment[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-		colorBlendAttachment[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        colorBlendAttachment[0].blendEnable = VK_FALSE;
+        /*colorBlendAttachment[0].colorBlendOp = VK_BLEND_OP_ADD;
+        colorBlendAttachment[0].srcColorBlendFactor = VK_BLEND_FACTOR_SRC_COLOR;
+        colorBlendAttachment[0].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+        colorBlendAttachment[0].alphaBlendOp = VK_BLEND_OP_ADD;
+        colorBlendAttachment[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+        colorBlendAttachment[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;*/
 
         VkPipelineColorBlendStateCreateInfo colorBlending = {};
         colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -722,16 +725,16 @@ namespace ve {
         swapChainFramebuffers.resize(swapChainImageViews.size());
 
         createImage(
-            swapChainExtent.width, 
-            swapChainExtent.height, 
-            depthFormat, 
-            VK_IMAGE_TILING_OPTIMAL, 
-            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, 
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
-            depthImage, 
+            swapChainExtent.width,
+            swapChainExtent.height,
+            depthFormat,
+            VK_IMAGE_TILING_OPTIMAL,
+            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            depthImage,
             depthImageMemory);
 
-        depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+        depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
         for (size_t i = 0; i < swapChainImageViews.size(); i++) {
             std::array<VkImageView, 2> attachments = {
@@ -913,40 +916,40 @@ namespace ve {
         vkBindImageMemory(device, image, imageMemory, 0);
     }
 
-	void VEngine::createTestImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
-		VkImageCreateInfo imageInfo = {};
-		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-		imageInfo.imageType = VK_IMAGE_TYPE_2D;
-		imageInfo.extent.width = width;
-		imageInfo.extent.height = height;
-		imageInfo.extent.depth = 1;
-		imageInfo.mipLevels = 1;
-		imageInfo.arrayLayers = 1;
-		imageInfo.format = format;
-		imageInfo.tiling = tiling;
-		imageInfo.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
-		imageInfo.usage = usage;
-		imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    void VEngine::createTestImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
+        VkImageCreateInfo imageInfo = {};
+        imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        imageInfo.imageType = VK_IMAGE_TYPE_2D;
+        imageInfo.extent.width = width;
+        imageInfo.extent.height = height;
+        imageInfo.extent.depth = 1;
+        imageInfo.mipLevels = 1;
+        imageInfo.arrayLayers = 1;
+        imageInfo.format = format;
+        imageInfo.tiling = tiling;
+        imageInfo.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+        imageInfo.usage = usage;
+        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-		if (vkCreateImage(device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create image!");
-		}
+        if (vkCreateImage(device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create image!");
+        }
 
-		VkMemoryRequirements memRequirements;
-		vkGetImageMemoryRequirements(device, image, &memRequirements);
+        VkMemoryRequirements memRequirements;
+        vkGetImageMemoryRequirements(device, image, &memRequirements);
 
-		VkMemoryAllocateInfo allocInfo = {};
-		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		allocInfo.allocationSize = memRequirements.size;
-		allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+        VkMemoryAllocateInfo allocInfo = {};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
 
-		if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
-			throw std::runtime_error("failed to allocate image memory!");
-		}
+        if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+            throw std::runtime_error("failed to allocate image memory!");
+        }
 
-		vkBindImageMemory(device, image, imageMemory, 0);
-	}
+        vkBindImageMemory(device, image, imageMemory, 0);
+    }
 
     void VEngine::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
         VkCommandBuffer commandBuffer = beginSingleTimeCommands();
@@ -1216,7 +1219,7 @@ namespace ve {
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &commandBuffer;
 
-       /* vkQueueSubmit(presentQueue, 1, &submitInfo, VK_NULL_HANDLE);
+        /* vkQueueSubmit(presentQueue, 1, &submitInfo, VK_NULL_HANDLE);
         vkQueueWaitIdle(presentQueue);*/
 
         // Create fence to ensure that the command buffer has finished executing
@@ -1267,12 +1270,12 @@ namespace ve {
     }
 
     void VEngine::updateUniformBuffer() {
-        
+
         camera_control();
 
         if (glfwGetKey(window, GLFW_KEY_F4) == GLFW_PRESS) {
 
-            auto color_file_name = "D:/project/vulkan_engine/build/color.ppm";
+            auto color_file_name = "D:/project/vulkan_engine/build/color.png";
             auto depth_file_name = "D:/project/vulkan_engine/build/depth.ppm";
 
             SaveOutputColorTexture(color_file_name);
@@ -1408,11 +1411,11 @@ namespace ve {
         VkResult result = vkAcquireNextImageKHR(device, swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 
         /*if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-            recreateSwapChain();
-            return;
+        recreateSwapChain();
+        return;
         }
         else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-            throw std::runtime_error("failed to acquire swap chain image!");
+        throw std::runtime_error("failed to acquire swap chain image!");
         }*/
 
         VkSubmitInfo shadowSubmitInfo = {};
@@ -1432,7 +1435,7 @@ namespace ve {
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = &renderFinishedSemaphore;
 
-        VK_CHECK_RESULT(vkQueueSubmit(presentQueue, 1, &submitInfo, VK_NULL_HANDLE)); 
+        VK_CHECK_RESULT(vkQueueSubmit(presentQueue, 1, &submitInfo, VK_NULL_HANDLE));
 
         VkPresentInfoKHR presentInfo = {};
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -1449,10 +1452,10 @@ namespace ve {
         VK_CHECK_RESULT(vkQueuePresentKHR(presentQueue, &presentInfo));
 
         /*if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-            recreateSwapChain();
+        recreateSwapChain();
         }
         else if (result != VK_SUCCESS) {
-            throw std::runtime_error("failed to present swap chain image!");
+        throw std::runtime_error("failed to present swap chain image!");
         }*/
 
         VK_CHECK_RESULT(vkQueueWaitIdle(presentQueue));
@@ -1471,261 +1474,198 @@ namespace ve {
 
     void VEngine::SaveOutputColorTexture(const std::string& path)
     {
-        
-            bool supportsBlit = true;
 
-            // Check blit support for source and destination
-            VkFormatProperties formatProps;
+        bool supportsBlit = true;
 
-            // Check if the device supports blitting from optimal images (the swapchain images are in optimal format)
-            vkGetPhysicalDeviceFormatProperties(physicalDevice, swapChainImageFormat, &formatProps);
-            if (!(formatProps.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_SRC_BIT)) {
-                std::cerr << "Device does not support blitting from optimal tiled images, using copy instead of blit!" << std::endl;
-                supportsBlit = false;
-            }
+        // Check blit support for source and destination
+        VkFormatProperties formatProps;
 
-            // Check if the device supports blitting to linear images 
-            vkGetPhysicalDeviceFormatProperties(physicalDevice, swapChainImageFormat, &formatProps);
-            if (!(formatProps.linearTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
-                std::cerr << "Device does not support blitting to linear tiled images, using copy instead of blit!" << std::endl;
-                supportsBlit = false;
-            }
+        // Check if the device supports blitting from optimal images (the swapchain images are in optimal format)
+        vkGetPhysicalDeviceFormatProperties(physicalDevice, swapChainImageFormat, &formatProps);
+        if (!(formatProps.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_SRC_BIT)) {
+            std::cerr << "Device does not support blitting from optimal tiled images, using copy instead of blit!" << std::endl;
+            supportsBlit = false;
+        }
 
-            // Source for the copy is the last rendered swapchain image
-            VkImage srcImage = swapChainImages[imageIndex];
+        // Check if the device supports blitting to linear images 
+        vkGetPhysicalDeviceFormatProperties(physicalDevice, swapChainImageFormat, &formatProps);
+        if (!(formatProps.linearTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
+            std::cerr << "Device does not support blitting to linear tiled images, using copy instead of blit!" << std::endl;
+            supportsBlit = false;
+        }
 
-            // Create the linear tiled destination image to copy to and to read the memory from
-            VkImageCreateInfo imageCreateCI = {};
-            imageCreateCI.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        // Source for the copy is the last rendered swapchain image
+        VkImage srcImage = swapChainImages[imageIndex];
 
-
-            imageCreateCI.imageType = VK_IMAGE_TYPE_2D;
-            // Note that vkCmdBlitImage (if supported) will also do format conversions if the swapchain color format would differ
-            imageCreateCI.format = swapChainImageFormat;
-            imageCreateCI.extent.width = WIDTH;
-            imageCreateCI.extent.height = HEIGHT;
-            imageCreateCI.extent.depth = 1;
-            imageCreateCI.arrayLayers = 1;
-            imageCreateCI.mipLevels = 1;
-            imageCreateCI.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            imageCreateCI.samples = VK_SAMPLE_COUNT_1_BIT;
-            imageCreateCI.tiling = VK_IMAGE_TILING_LINEAR;
-            imageCreateCI.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-            // Create the image
-            VkImage dstImage;
-            VK_CHECK_RESULT(vkCreateImage(device, &imageCreateCI, nullptr, &dstImage));
-            // Create memory to back up the image
-            VkMemoryRequirements memRequirements;
-
-            VkMemoryAllocateInfo memAllocInfo{};
-            memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        // Create the linear tiled destination image to copy to and to read the memory from
+        VkImageCreateInfo imageCreateCI = {};
+        imageCreateCI.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 
 
-            VkDeviceMemory dstImageMemory;
-            vkGetImageMemoryRequirements(device, dstImage, &memRequirements);
-            memAllocInfo.allocationSize = memRequirements.size;
-            // Memory must be host visible to copy from
+        imageCreateCI.imageType = VK_IMAGE_TYPE_2D;
+        // Note that vkCmdBlitImage (if supported) will also do format conversions if the swapchain color format would differ
+        imageCreateCI.format = swapChainImageFormat;
+        imageCreateCI.extent.width = WIDTH;
+        imageCreateCI.extent.height = HEIGHT;
+        imageCreateCI.extent.depth = 1;
+        imageCreateCI.arrayLayers = 1;
+        imageCreateCI.mipLevels = 1;
+        imageCreateCI.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        imageCreateCI.samples = VK_SAMPLE_COUNT_1_BIT;
+        imageCreateCI.tiling = VK_IMAGE_TILING_LINEAR;
+        imageCreateCI.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        // Create the image
+        VkImage dstImage;
+        VK_CHECK_RESULT(vkCreateImage(device, &imageCreateCI, nullptr, &dstImage));
+        // Create memory to back up the image
+        VkMemoryRequirements memRequirements;
 
-            memAllocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-            VK_CHECK_RESULT(vkAllocateMemory(device, &memAllocInfo, nullptr, &dstImageMemory));
-            VK_CHECK_RESULT(vkBindImageMemory(device, dstImage, dstImageMemory, 0));
-
-            // Do the actual blit from the swapchain image to our host visible destination image
-
-            VkCommandBufferAllocateInfo cmdBufAllocateInfo{};
-            cmdBufAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-            cmdBufAllocateInfo.commandPool = commandPool;
-            cmdBufAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-            cmdBufAllocateInfo.commandBufferCount = 1;
-
-            
-            VkCommandBuffer copyCmd;
-            VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, &copyCmd));
-         
-            VkCommandBufferBeginInfo cmdBufInfo{};
-            cmdBufInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-            VK_CHECK_RESULT(vkBeginCommandBuffer(copyCmd, &cmdBufInfo));
+        VkMemoryAllocateInfo memAllocInfo{};
+        memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 
 
-            VkImageMemoryBarrier imageMemoryBarrier{};
-            imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-            imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        VkDeviceMemory dstImageMemory;
+        vkGetImageMemoryRequirements(device, dstImage, &memRequirements);
+        memAllocInfo.allocationSize = memRequirements.size;
+        // Memory must be host visible to copy from
+
+        memAllocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+        VK_CHECK_RESULT(vkAllocateMemory(device, &memAllocInfo, nullptr, &dstImageMemory));
+        VK_CHECK_RESULT(vkBindImageMemory(device, dstImage, dstImageMemory, 0));
+
+        // Do the actual blit from the swapchain image to our host visible destination image
+
+        VkCommandBufferAllocateInfo cmdBufAllocateInfo{};
+        cmdBufAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        cmdBufAllocateInfo.commandPool = commandPool;
+        cmdBufAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        cmdBufAllocateInfo.commandBufferCount = 1;
 
 
-            // Transition destination image to transfer destination layout
-            insertImageMemoryBarrier(
+        VkCommandBuffer copyCmd;
+        VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, &copyCmd));
+
+        VkCommandBufferBeginInfo cmdBufInfo{};
+        cmdBufInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+        VK_CHECK_RESULT(vkBeginCommandBuffer(copyCmd, &cmdBufInfo));
+
+
+        VkImageMemoryBarrier imageMemoryBarrier{};
+        imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+        // If source and destination support blit we'll blit as this also does automatic format conversion (e.g. from BGR to RGB)
+        if (supportsBlit)
+        {
+            // Define the region to blit (we will blit the whole swapchain image)
+            VkOffset3D blitSize;
+            blitSize.x = WIDTH;
+            blitSize.y = HEIGHT;
+            blitSize.z = 1;
+            VkImageBlit imageBlitRegion{};
+            imageBlitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            imageBlitRegion.srcSubresource.layerCount = 1;
+            imageBlitRegion.srcOffsets[1] = blitSize;
+            imageBlitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            imageBlitRegion.dstSubresource.layerCount = 1;
+            imageBlitRegion.dstOffsets[1] = blitSize;
+
+            // Issue the blit command
+            vkCmdBlitImage(
                 copyCmd,
-                dstImage,
-                0,
-                VK_ACCESS_TRANSFER_WRITE_BIT,
-                VK_IMAGE_LAYOUT_UNDEFINED,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+                srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                1,
+                &imageBlitRegion,
+                VK_FILTER_NEAREST);
+        }
+        else
+        {
+            // Otherwise use image copy (requires us to manually flip components)
+            VkImageCopy imageCopyRegion{};
+            imageCopyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            imageCopyRegion.srcSubresource.layerCount = 1;
+            imageCopyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            imageCopyRegion.dstSubresource.layerCount = 1;
+            imageCopyRegion.extent.width = WIDTH;
+            imageCopyRegion.extent.height = HEIGHT;
+            imageCopyRegion.extent.depth = 1;
 
-            // Transition swapchain image from present to transfer source layout
-            insertImageMemoryBarrier(
+            // Issue the copy command
+            vkCmdCopyImage(
                 copyCmd,
-                srcImage,
-                VK_ACCESS_MEMORY_READ_BIT,
-                VK_ACCESS_TRANSFER_READ_BIT,
-                VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+                srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                1,
+                &imageCopyRegion);
+        }
 
-            // If source and destination support blit we'll blit as this also does automatic format conversion (e.g. from BGR to RGB)
-            if (supportsBlit)
-            {
-                // Define the region to blit (we will blit the whole swapchain image)
-                VkOffset3D blitSize;
-                blitSize.x = WIDTH;
-                blitSize.y = HEIGHT;
-                blitSize.z = 1;
-                VkImageBlit imageBlitRegion{};
-                imageBlitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                imageBlitRegion.srcSubresource.layerCount = 1;
-                imageBlitRegion.srcOffsets[1] = blitSize;
-                imageBlitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                imageBlitRegion.dstSubresource.layerCount = 1;
-                imageBlitRegion.dstOffsets[1] = blitSize;
-
-                // Issue the blit command
-                vkCmdBlitImage(
-                    copyCmd,
-                    srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                    dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                    1,
-                    &imageBlitRegion,
-                    VK_FILTER_NEAREST);
-            }
-            else
-            {
-                // Otherwise use image copy (requires us to manually flip components)
-                VkImageCopy imageCopyRegion{};
-                imageCopyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                imageCopyRegion.srcSubresource.layerCount = 1;
-                imageCopyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                imageCopyRegion.dstSubresource.layerCount = 1;
-                imageCopyRegion.extent.width = WIDTH;
-                imageCopyRegion.extent.height = HEIGHT;
-                imageCopyRegion.extent.depth = 1;
-
-                // Issue the copy command
-                vkCmdCopyImage(
-                    copyCmd,
-                    srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                    dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                    1,
-                    &imageCopyRegion);
-            }
-
-            // Transition destination image to general layout, which is the required layout for mapping the image memory later on
-            insertImageMemoryBarrier(
-                copyCmd,
-                dstImage,
-                VK_ACCESS_TRANSFER_WRITE_BIT,
-                VK_ACCESS_MEMORY_READ_BIT,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                VK_IMAGE_LAYOUT_GENERAL,
-                VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
-
-            // Transition back the swap chain image after the blit is done
-            insertImageMemoryBarrier(
-                copyCmd,
-                srcImage,
-                VK_ACCESS_TRANSFER_READ_BIT,
-                VK_ACCESS_MEMORY_READ_BIT,
-                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-                VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+        endSingleTimeCommands(copyCmd);
 
 
-            endSingleTimeCommands(copyCmd);
+        // Get layout of the image (including row pitch)
+        VkImageSubresource subResource{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0 };
+        VkSubresourceLayout subResourceLayout;
+        vkGetImageSubresourceLayout(device, dstImage, &subResource, &subResourceLayout);
+
+        // Map image memory so we can start copying from it
+        const char* data;
+        vkMapMemory(device, dstImageMemory, 0, VK_WHOLE_SIZE, 0, (void**)&data);
+        data += subResourceLayout.offset;
 
 
-            // Get layout of the image (including row pitch)
-            VkImageSubresource subResource{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0 };
-            VkSubresourceLayout subResourceLayout;
-            vkGetImageSubresourceLayout(device, dstImage, &subResource, &subResourceLayout);
-
-            // Map image memory so we can start copying from it
-            const char* data;
-            vkMapMemory(device, dstImageMemory, 0, VK_WHOLE_SIZE, 0, (void**)&data);
-            data += subResourceLayout.offset;
-
-            std::ofstream file(path, std::ios::out | std::ios::binary);
-
-            // ppm header
-            file << "P6\n" << WIDTH << "\n" << HEIGHT << "\n" << 255 << "\n";
-
-            // If source is BGR (destination is always RGB) and we can't use blit (which does automatic conversion), we'll have to manually swizzle color components
-            bool colorSwizzle = false;
-            // Check if source is BGR 
-            // Note: Not complete, only contains most common and basic BGR surface formats for demonstation purposes
-            if (!supportsBlit)
-            {
-                std::vector<VkFormat> formatsBGR = { VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_B8G8R8A8_SNORM };
-                colorSwizzle = (std::find(formatsBGR.begin(), formatsBGR.end(), swapChainImageFormat) != formatsBGR.end());
-            }
-
-            auto image_size = HEIGHT * WIDTH;
+        stbi_write_png(path.data(), WIDTH, HEIGHT, 4, data, WIDTH * 4);
 
 
-            std::vector<char> datas;
+        //std::ofstream file(path, std::ios::out | std::ios::binary);
+
+        //// ppm header
+        //file << "P6\n" << WIDTH << "\n" << HEIGHT << "\n" << 255 << "\n";
+
+        //// If source is BGR (destination is always RGB) and we can't use blit (which does automatic conversion), we'll have to manually swizzle color components
+        //bool colorSwizzle = false;
+        //// Check if source is BGR 
+        //// Note: Not complete, only contains most common and basic BGR surface formats for demonstation purposes
+        //if (!supportsBlit)
+        //{
+        //    std::vector<VkFormat> formatsBGR = { VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_B8G8R8A8_SNORM };
+        //    colorSwizzle = (std::find(formatsBGR.begin(), formatsBGR.end(), swapChainImageFormat) != formatsBGR.end());
+        //}
+
+        //auto image_size = HEIGHT * WIDTH;
 
 
-            for (uint32_t y = 0; y < HEIGHT; y++)
-            {
-                unsigned int *row = (unsigned int*)data;
-                for (uint32_t x = 0; x < WIDTH; x++)
-                {
-                    if (colorSwizzle)
-                    {
-                        /*file.write((char*)row + 2, 1);
-                        file.write((char*)row + 1, 1);
-                        file.write((char*)row, 1);*/
+        //for (uint32_t y = 0; y < HEIGHT; y++)
+        //{
+        //    unsigned int *row = (unsigned int*)data;
+        //    for (uint32_t x = 0; x < WIDTH; x++)
+        //    {
+        //        if (colorSwizzle)
+        //        {
+        //            file.write((char*)row + 2, 1);
+        //            file.write((char*)row + 1, 1);
+        //            file.write((char*)row, 1);
+        //        }
+        //        else
+        //        {
+        //            file.write((char*)row, 3);
+        //        }
+        //        row++;
+        //    }
+        //    data += subResourceLayout.rowPitch;
+        //}
 
-                        datas.push_back(row[2]);
-                        datas.push_back(row[1]);
-                        datas.push_back(row[0]);
-                    }
-                    else
-                    {
-                        //file.write((char*)row, 3);
+        //file.close();
 
-                        datas.push_back(row[0]);
-                        datas.push_back(row[1]);
-                        datas.push_back(row[2]);
+        std::cout << "Screenshot saved to disk" << std::endl;
 
-
-                    }
-                    row++;
-                }
-                data += subResourceLayout.rowPitch;
-            }
-
-
-            file.write(datas.data(), datas.size());
-
-
-            file.close();
-
-            std::cout << "Screenshot saved to disk" << std::endl;
-
-            // Clean up resources
-            vkUnmapMemory(device, dstImageMemory);
-            vkFreeMemory(device, dstImageMemory, nullptr);
-            vkDestroyImage(device, dstImage, nullptr);
+        // Clean up resources
+        vkUnmapMemory(device, dstImageMemory);
+        vkFreeMemory(device, dstImageMemory, nullptr);
+        vkDestroyImage(device, dstImage, nullptr);
 
     }
 
@@ -1738,13 +1678,13 @@ namespace ve {
 
         createBuffer(
             size,
-            VK_BUFFER_USAGE_TRANSFER_DST_BIT, 
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
             dstBuffer,
             dstMemory);
 
         VkCommandBuffer copyCmd = beginSingleTimeCommands();
-       
+
         // depth format -> VK_FORMAT_D32_SFLOAT_S8_UINT
         VkBufferImageCopy region = {};
         region.bufferOffset = 0;
@@ -1755,8 +1695,8 @@ namespace ve {
         region.imageSubresource.baseArrayLayer = 0;
         region.imageSubresource.layerCount = 1;
         region.imageOffset = VkOffset3D{ 0, 0, 0 };
-        region.imageExtent = VkExtent3D{ swapChainExtent.width, swapChainExtent.height, 1};
-        
+        region.imageExtent = VkExtent3D{ swapChainExtent.width, swapChainExtent.height, 1 };
+
 
         vkCmdCopyImageToBuffer(
             copyCmd,
@@ -1770,46 +1710,88 @@ namespace ve {
 
 
         // Map image memory so we can start copying from it
-        void *out_data;
         void *data;
         vkMapMemory(device, dstMemory, 0, size, 0, &data);
-        memcpy(out_data, data, size);
-        vkUnmapMemory(device, dstMemory);
 
-
-        void* data;
-        vkMapMemory(device, uniformMatrixBufferMemory, 0, sizeof(umo), 0, &data);
-        memcpy(data, &umo, sizeof(umo));
-        vkUnmapMemory(device, uniformMatrixBufferMemory);
-
+        //stbi_write_png(path.data(), WIDTH, HEIGHT, 4, data, WIDTH * 4);
 
         std::ofstream file(path, std::ios::out | std::ios::binary);
 
         // ppm header
         file << "P6\n" << WIDTH << "\n" << HEIGHT << "\n" << 255 << "\n";
-      
-        // HEIGHT 600
-        // WIDTH 800
-        std::vector<char> datas;
-        for (uint32_t y = 0; y < HEIGHT; y++)
-        {
-            float *row = (float*)data;
-            for (uint32_t x = 0; x < WIDTH; x++)
-            {
-                datas.push_back(row[2] * 255); // r 
-                datas.push_back(row[2] * 255); // g
-                datas.push_back(row[2] * 255); // b
-                
-                row++;
-            }
-            //out_data += 800 * 4;
+
+        auto *row = (float*)data;
+
+        auto size_v = WIDTH * HEIGHT;
+
+        int ca[2] = { 10, 5 };
+        float ba[2] = { 8.0, 4.0 };
+
+        auto kk = ca;
+        auto uo = ba;
+
+
+
+        for (uint32_t y = 0; y < size_v; y++) {
+
+            uint8_t grey = MapColor(*row);
+
+            file.write((char*)(&grey), 1);
+            file.write((char*)(&grey), 1);
+            file.write((char*)(&grey), 1);
+
+            /*glm::vec3 color = ColorWheel(*row);
+            uint8_t r = MapColor(color.r);
+            uint8_t g = MapColor(color.g);
+            uint8_t b = MapColor(color.b);
+
+            file.write((char*)(&r), 1);
+            file.write((char*)(&g), 1);
+            file.write((char*)(&b), 1);*/
+
+            row++;
+
         }
 
-        file.write(datas.data(), datas.size());
-
         file.close();
-       
 
+        // Clean up resources
+        vkUnmapMemory(device, dstMemory);
+        vkFreeMemory(device, dstMemory, nullptr);
+        vkDestroyBuffer(device, dstBuffer, nullptr);
+
+    }
+
+    uint8_t VEngine::MapColor(float f) {
+        return (uint8_t)(f * 255.0f);
+    }
+
+    glm::vec3 VEngine::ColorWheel(float normalizeHue) {
+        float v = normalizeHue * 6.0f;
+        if (v < 0.f) {
+            return glm::vec3(1.f, 0.f, 0.f);
+        }
+        else if (v < 1.f) {
+            return glm::vec3(1.f, v, 0.f);
+        }
+        else if (v < 2.f) {
+            return glm::vec3(1.f - (v - 1.f), 1.f, 0.f);
+        }
+        else if (v < 3.f) {
+            return glm::vec3(0.f, 1.f, (v - 2.f));
+        }
+        else if (v < 4.f) {
+            return glm::vec3(0.f, 1.f - (v - 3.f), 1.f);
+        }
+        else if (v < 5.f) {
+            return glm::vec3((v - 4.f), 0.f, 1.f);
+        }
+        else  if (v < 6.f) {
+            return glm::vec3(1.f, 0.f, 1.f - (v - 5.f));
+        }
+        else {
+            return glm::vec3(1.f, 0.f, 0.f);
+        }
     }
 
     VkShaderModule VEngine::createShaderModule(const std::vector<char>& code) {
@@ -2041,43 +2023,4 @@ namespace ve {
         return ortho;
     }
 
-    void VEngine::insertImageMemoryBarrier(
-        VkCommandBuffer cmdbuffer,
-        VkImage image,
-        VkAccessFlags srcAccessMask,
-        VkAccessFlags dstAccessMask,
-        VkImageLayout oldImageLayout,
-        VkImageLayout newImageLayout,
-        VkPipelineStageFlags srcStageMask,
-        VkPipelineStageFlags dstStageMask,
-        VkImageSubresourceRange subresourceRange)
-    {
-        VkImageMemoryBarrier imageMemoryBarrier{};
-        imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        imageMemoryBarrier.srcAccessMask = srcAccessMask;
-        imageMemoryBarrier.dstAccessMask = dstAccessMask;
-        imageMemoryBarrier.oldLayout = oldImageLayout;
-        imageMemoryBarrier.newLayout = newImageLayout;
-        imageMemoryBarrier.image = image;
-        imageMemoryBarrier.subresourceRange = subresourceRange;
-
-        vkCmdPipelineBarrier(
-            cmdbuffer,
-            srcStageMask,
-            dstStageMask,
-            0,
-            0, nullptr,
-            0, nullptr,
-            1, &imageMemoryBarrier);
-    }
-
-
-
-
-    
 }
-
-
-
