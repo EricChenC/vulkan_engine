@@ -93,6 +93,8 @@ namespace ve {
         void SaveOutputColorTexture(const std::string& path);
         void SaveOutputDepthTexture(const std::string& path);
 
+        void setupMultisampleTarget();
+
     public:
         struct UniformMatrixBufferObject {
             glm::mat4 view;
@@ -189,6 +191,7 @@ namespace ve {
         uint8_t MapColor(float f);
         glm::vec3 ColorWheel(float normalizeHue);
 
+
     private:
         GLFWwindow* window;
 
@@ -242,6 +245,19 @@ namespace ve {
 
         uint32_t imageIndex;
 
+        struct {
+            struct {
+                VkImage image;
+                VkImageView view;
+                VkDeviceMemory memory;
+            } color;
+            struct {
+                VkImage image;
+                VkImageView view;
+                VkDeviceMemory memory;
+            } depth;
+        } multisampleTarget;
+
 
     private:
         const std::vector<const char*> validationLayers = {
@@ -286,7 +302,7 @@ namespace ve {
         const bool enableValidationLayers = true;
 
         // version 2
-        const std::string MODEL_PATH = "D:/project/vulkan_engine/media/models/shadow_01.obj";
+        const std::string MODEL_PATH = "D:/media/models/maya/large_shadow.obj";
 
        
     };

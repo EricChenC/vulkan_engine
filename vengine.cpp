@@ -428,37 +428,60 @@ namespace ve {
     }
 
     void VEngine::createRenderPass() {
-        std::array<VkAttachmentDescription, 2> attachments{};
+        std::array<VkAttachmentDescription, 4> attachments{};
         attachments[0].format = swapChainImageFormat;
-        attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+        attachments[0].samples = VK_SAMPLE_COUNT_4_BIT;
         attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        attachments[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-        attachments[1].format = depthFormat;
+        attachments[1].format = swapChainImageFormat;
         attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
         attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        attachments[1].finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        attachments[1].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-        VkAttachmentReference colorAttachmentRef[1];
+        attachments[2].format = depthFormat;
+        attachments[2].samples = VK_SAMPLE_COUNT_4_BIT;
+        attachments[2].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachments[2].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachments[2].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachments[2].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachments[2].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachments[2].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+        attachments[3].format = depthFormat;
+        attachments[3].samples = VK_SAMPLE_COUNT_1_BIT;
+        attachments[3].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachments[3].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachments[3].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachments[3].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachments[3].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachments[3].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+        VkAttachmentReference colorAttachmentRef[1] = {};
         colorAttachmentRef[0] = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
 
-        VkAttachmentReference depthAttachmentRef = {};
-        depthAttachmentRef.attachment = 1;
-        depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        VkAttachmentReference depthAttachmentRef[2] = {};
+        depthAttachmentRef[0] = { 2, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
+        depthAttachmentRef[1] = { 3, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
+
+        VkAttachmentReference resolveAttachmentRef[1] = {};
+        resolveAttachmentRef[0] = { 1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+
 
         VkSubpassDescription subpass = {};
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpass.colorAttachmentCount = 1;
         subpass.pColorAttachments = colorAttachmentRef;
-        subpass.pDepthStencilAttachment = &depthAttachmentRef;
+        subpass.pDepthStencilAttachment = depthAttachmentRef;
+        subpass.pResolveAttachments = resolveAttachmentRef;
 
         VkSubpassDependency dependency[2] = {};
 
@@ -648,7 +671,8 @@ namespace ve {
         VkPipelineMultisampleStateCreateInfo multisampling = {};
         multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
         multisampling.sampleShadingEnable = VK_TRUE;
-        multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+        multisampling.rasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
+        multisampling.minSampleShading = 0.25f;					// Minimum fraction for sample shading
 
 
         VkPipelineDepthStencilStateCreateInfo depthStencil = {};
@@ -724,6 +748,8 @@ namespace ve {
     void VEngine::createFramebuffers() {
         swapChainFramebuffers.resize(swapChainImageViews.size());
 
+        setupMultisampleTarget();
+
         createImage(
             swapChainExtent.width,
             swapChainExtent.height,
@@ -737,8 +763,10 @@ namespace ve {
         depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
         for (size_t i = 0; i < swapChainImageViews.size(); i++) {
-            std::array<VkImageView, 2> attachments = {
+            std::array<VkImageView, 4> attachments = {
+                multisampleTarget.color.view,
                 swapChainImageViews[i],
+                multisampleTarget.depth.view,
                 depthImageView
             };
 
@@ -786,9 +814,11 @@ namespace ve {
             renderPassInfo.renderArea.offset = { 0, 0 };
             renderPassInfo.renderArea.extent = swapChainExtent;
 
-            std::array<VkClearValue, 2> clearValues = {};
+            std::array<VkClearValue, 4> clearValues = {};
             clearValues[0].color = { 0.2f, 0.2f, 0.2f, 1.0f };
-            clearValues[1].depthStencil = { 1.0f, 0 };
+            clearValues[1].color = { 0.2f, 0.2f, 0.2f, 1.0f };
+            clearValues[2].depthStencil = { 1.0f, 0 };
+            clearValues[3].depthStencil = { 1.0f, 0 };
 
             renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
             renderPassInfo.pClearValues = clearValues.data();
@@ -1724,14 +1754,6 @@ namespace ve {
 
         auto size_v = WIDTH * HEIGHT;
 
-        int ca[2] = { 10, 5 };
-        float ba[2] = { 8.0, 4.0 };
-
-        auto kk = ca;
-        auto uo = ba;
-
-
-
         for (uint32_t y = 0; y < size_v; y++) {
 
             uint8_t grey = MapColor(*row);
@@ -2021,6 +2043,101 @@ namespace ve {
         };
 
         return ortho;
+    }
+
+    void VEngine::setupMultisampleTarget()
+    {
+        // Check if device supports requested sample count for color and depth frame buffer
+
+        // Color target
+        VkImageCreateInfo info = {};
+        info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        info.imageType = VK_IMAGE_TYPE_2D;
+        info.format = swapChainImageFormat;
+        info.extent.width = WIDTH;
+        info.extent.height = HEIGHT;
+        info.extent.depth = 1;
+        info.mipLevels = 1;
+        info.arrayLayers = 1;
+        info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        info.tiling = VK_IMAGE_TILING_OPTIMAL;
+        info.samples = VK_SAMPLE_COUNT_4_BIT;
+        // Image will only be used as a transient target
+        info.usage = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+        VK_CHECK_RESULT(vkCreateImage(device, &info, nullptr, &multisampleTarget.color.image));
+
+        VkMemoryRequirements memReqs;
+        vkGetImageMemoryRequirements(device, multisampleTarget.color.image, &memReqs);
+        VkMemoryAllocateInfo memAlloc = {};
+        memAlloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        memAlloc.allocationSize = memReqs.size;
+        // We prefer a lazily allocated memory type
+        // This means that the memory gets allocated when the implementation sees fit, e.g. when first using the images
+        memAlloc.memoryTypeIndex = findMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        
+        VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, &multisampleTarget.color.memory));
+        vkBindImageMemory(device, multisampleTarget.color.image, multisampleTarget.color.memory, 0);
+
+        // Create image view for the MSAA target
+        VkImageViewCreateInfo viewInfo = {};
+        viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        viewInfo.image = multisampleTarget.color.image;
+        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        viewInfo.format = swapChainImageFormat;
+        viewInfo.components.r = VK_COMPONENT_SWIZZLE_R;
+        viewInfo.components.g = VK_COMPONENT_SWIZZLE_G;
+        viewInfo.components.b = VK_COMPONENT_SWIZZLE_B;
+        viewInfo.components.a = VK_COMPONENT_SWIZZLE_A;
+        viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        viewInfo.subresourceRange.levelCount = 1;
+        viewInfo.subresourceRange.layerCount = 1;
+
+        VK_CHECK_RESULT(vkCreateImageView(device, &viewInfo, nullptr, &multisampleTarget.color.view));
+
+        // Depth target
+        info.imageType = VK_IMAGE_TYPE_2D;
+        info.format = depthFormat;
+        info.extent.width = WIDTH;
+        info.extent.height = HEIGHT;
+        info.extent.depth = 1;
+        info.mipLevels = 1;
+        info.arrayLayers = 1;
+        info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        info.tiling = VK_IMAGE_TILING_OPTIMAL;
+        info.samples = VK_SAMPLE_COUNT_4_BIT;
+        // Image will only be used as a transient target
+        info.usage = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+        VK_CHECK_RESULT(vkCreateImage(device, &info, nullptr, &multisampleTarget.depth.image));
+
+        vkGetImageMemoryRequirements(device, multisampleTarget.depth.image, &memReqs);
+
+        memAlloc = {};
+        memAlloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        memAlloc.allocationSize = memReqs.size;
+
+        memAlloc.memoryTypeIndex = findMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+      
+
+        VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, &multisampleTarget.depth.memory));
+        vkBindImageMemory(device, multisampleTarget.depth.image, multisampleTarget.depth.memory, 0);
+
+        // Create image view for the MSAA target
+        viewInfo.image = multisampleTarget.depth.image;
+        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        viewInfo.format = depthFormat;
+        viewInfo.components.r = VK_COMPONENT_SWIZZLE_R;
+        viewInfo.components.g = VK_COMPONENT_SWIZZLE_G;
+        viewInfo.components.b = VK_COMPONENT_SWIZZLE_B;
+        viewInfo.components.a = VK_COMPONENT_SWIZZLE_A;
+        viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+        viewInfo.subresourceRange.levelCount = 1;
+        viewInfo.subresourceRange.layerCount = 1;
+
+        VK_CHECK_RESULT(vkCreateImageView(device, &viewInfo, nullptr, &multisampleTarget.depth.view));
     }
 
 }
