@@ -302,7 +302,7 @@ namespace ve {
         const bool enableValidationLayers = true;
 
         // version 2
-        const std::string MODEL_PATH = "D:/media/models/maya/large_shadow.obj";
+        const std::string MODEL_PATH = "D:/media/model/shadow.obj";
 
        
     };

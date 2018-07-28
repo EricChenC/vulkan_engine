@@ -454,7 +454,7 @@ namespace ve {
         attachments[2].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         attachments[2].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         attachments[2].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        attachments[2].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        attachments[2].finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 
         attachments[3].format = depthFormat;
         attachments[3].samples = VK_SAMPLE_COUNT_1_BIT;
@@ -463,7 +463,7 @@ namespace ve {
         attachments[3].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         attachments[3].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         attachments[3].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        attachments[3].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        attachments[3].finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 
         VkAttachmentReference colorAttachmentRef[1] = {};
         colorAttachmentRef[0] = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
@@ -1308,7 +1308,7 @@ namespace ve {
             auto color_file_name = "D:/project/vulkan_engine/build/color.png";
             auto depth_file_name = "D:/project/vulkan_engine/build/depth.ppm";
 
-            SaveOutputColorTexture(color_file_name);
+            //SaveOutputColorTexture(color_file_name);
             SaveOutputDepthTexture(depth_file_name);
         }
 
@@ -1690,7 +1690,7 @@ namespace ve {
 
         //file.close();
 
-        std::cout << "Screenshot saved to disk" << std::endl;
+        std::cout << "Color texture saved to disk" << std::endl;
 
         // Clean up resources
         vkUnmapMemory(device, dstImageMemory);
@@ -1730,7 +1730,7 @@ namespace ve {
 
         vkCmdCopyImageToBuffer(
             copyCmd,
-            depthImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            multisampleTarget.depth.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
             dstBuffer,
             1,
             &region
@@ -1776,6 +1776,8 @@ namespace ve {
         }
 
         file.close();
+
+        std::cout << "Depth texture saved to disk" << std::endl;
 
         // Clean up resources
         vkUnmapMemory(device, dstMemory);
@@ -2063,7 +2065,7 @@ namespace ve {
         info.tiling = VK_IMAGE_TILING_OPTIMAL;
         info.samples = VK_SAMPLE_COUNT_4_BIT;
         // Image will only be used as a transient target
-        info.usage = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
         VK_CHECK_RESULT(vkCreateImage(device, &info, nullptr, &multisampleTarget.color.image));
@@ -2108,7 +2110,7 @@ namespace ve {
         info.tiling = VK_IMAGE_TILING_OPTIMAL;
         info.samples = VK_SAMPLE_COUNT_4_BIT;
         // Image will only be used as a transient target
-        info.usage = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
         info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
         VK_CHECK_RESULT(vkCreateImage(device, &info, nullptr, &multisampleTarget.depth.image));
