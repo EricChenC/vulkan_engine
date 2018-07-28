@@ -286,7 +286,7 @@ namespace ve {
         const bool enableValidationLayers = true;
 
         // version 2
-        const std::string MODEL_PATH = "D:/project/vulkan_engine/media/models/shadow_01.obj";
+        const std::string MODEL_PATH = "D:/media/model/maya/shadow.obj";
 
        
     };

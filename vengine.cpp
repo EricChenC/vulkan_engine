@@ -1660,7 +1660,7 @@ namespace ve {
 
         //file.close();
 
-        std::cout << "Screenshot saved to disk" << std::endl;
+        std::cout << "Color texture saved to disk" << std::endl;
 
         // Clean up resources
         vkUnmapMemory(device, dstImageMemory);
@@ -1754,6 +1754,9 @@ namespace ve {
         }
 
         file.close();
+
+        std::cout << "Depth texture saved to disk" << std::endl;
+
 
         // Clean up resources
         vkUnmapMemory(device, dstMemory);
