@@ -1307,7 +1307,7 @@ namespace ve {
             auto color_file_name = "D:/project/vulkan_engine/build/color.png";
             auto depth_file_name = "D:/project/vulkan_engine/build/depth.ppm";
 
-            SaveOutputColorTexture(color_file_name);
+            //SaveOutputColorTexture(color_file_name);
             SaveOutputDepthTexture(depth_file_name);
         }
 
@@ -1700,6 +1700,55 @@ namespace ve {
 
     void VEngine::SaveOutputDepthTexture(const std::string& path)
     {
+        /*VkImage resolveImage;
+        VkDeviceMemory resolveImageMemory;
+
+        createImage(
+            WIDTH,
+            HEIGHT,
+            depthFormat,
+            VK_IMAGE_TILING_OPTIMAL,
+            VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            resolveImage,
+            resolveImageMemory);
+
+        VkImageResolve imageResolve = {};
+
+        imageResolve.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        imageResolve.srcSubresource.layerCount = 1;
+        imageResolve.srcSubresource.mipLevel = 1;
+
+        imageResolve.srcOffset.x = WIDTH;
+        imageResolve.srcOffset.y = HEIGHT;
+
+        imageResolve.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        imageResolve.dstSubresource.layerCount = 1;
+        imageResolve.dstSubresource.mipLevel = 1;
+
+        imageResolve.dstOffset.x = WIDTH;
+        imageResolve.dstOffset.y = HEIGHT;
+
+        imageResolve.extent.depth = 1;
+        imageResolve.extent.width = WIDTH;
+        imageResolve.extent.height = HEIGHT;
+
+
+
+        VkCommandBuffer resolveCmd = beginSingleTimeCommands();
+
+        vkCmdResolveImage(
+            resolveCmd,
+            multisampleTarget.depth.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            resolveImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1,
+            &imageResolve
+            );
+
+        endSingleTimeCommands(resolveCmd);*/
+
+
+
 
         VkDeviceSize size = WIDTH * HEIGHT * 4;
         VkBuffer dstBuffer;
@@ -1727,13 +1776,21 @@ namespace ve {
         region.imageExtent = VkExtent3D{ swapChainExtent.width, swapChainExtent.height, 1 };
 
 
-        vkCmdCopyImageToBuffer(
+       /* vkCmdCopyImageToBuffer(
+            copyCmd,
+            resolveImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            dstBuffer,
+            1,
+            &region
+        );*/
+
+        /*vkCmdCopyImageToBuffer(
             copyCmd,
             depthImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
             dstBuffer,
             1,
             &region
-        );
+        );*/
 
         endSingleTimeCommands(copyCmd);
 
