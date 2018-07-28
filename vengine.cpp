@@ -468,9 +468,8 @@ namespace ve {
         VkAttachmentReference colorAttachmentRef[1] = {};
         colorAttachmentRef[0] = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
 
-        VkAttachmentReference depthAttachmentRef[2] = {};
+        VkAttachmentReference depthAttachmentRef[1] = {};
         depthAttachmentRef[0] = { 2, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
-        depthAttachmentRef[1] = { 3, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
 
         VkAttachmentReference resolveAttachmentRef[1] = {};
         resolveAttachmentRef[0] = { 1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
@@ -1730,7 +1729,7 @@ namespace ve {
 
         vkCmdCopyImageToBuffer(
             copyCmd,
-            multisampleTarget.depth.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            depthImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
             dstBuffer,
             1,
             &region
