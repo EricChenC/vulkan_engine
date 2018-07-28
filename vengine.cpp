@@ -1308,7 +1308,7 @@ namespace ve {
             auto color_file_name = "D:/project/vulkan_engine/build/color.png";
             auto depth_file_name = "D:/project/vulkan_engine/build/depth.ppm";
 
-            //SaveOutputColorTexture(color_file_name);
+            SaveOutputColorTexture(color_file_name);
             SaveOutputDepthTexture(depth_file_name);
         }
 
