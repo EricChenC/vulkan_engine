@@ -430,7 +430,7 @@ namespace ve {
     void VEngine::createRenderPass() {
         std::array<VkAttachmentDescription, 6> attachments{};
 
-        depthColorForamt = VK_FORMAT_R8G8B8A8_UNORM;
+        depthColorForamt = VK_FORMAT_R32G32B32A32_SFLOAT;
 
         attachments[0].format = depthColorForamt;
         attachments[0].samples = VK_SAMPLE_COUNT_4_BIT;
@@ -1818,12 +1818,24 @@ namespace ve {
 
         for (uint32_t y = 0; y < size_v; y++) {
 
-            file.write((char*)row + 3, 1);
-            file.write((char*)row + 3, 1);
-            file.write((char*)row + 3, 1);
+            // VK_FORMAT_R32G32B32A32_SFLOAT 128 bit
+            // r: 4 byte -> 32 bit
+            // g: 4 byte -> 32 bit
+            // b: 4 byte -> 32 bit
+            // a: 4 byte -> 32 bit
+            // 16 byte -> 128 bit
+            // float -> 4 byte -> 32 bit
+            // char -> 1 byte -> 8 bit
+            // (float*)row + 3 -> 3 * 32 = 96 -> color a
+            auto col = MapColor(*((float*)row + 3));
+
+            file.write((char*)(&col), 1);
+            file.write((char*)(&col), 1);
+            file.write((char*)(&col), 1);
 
             // + 1 ->  + 32 byte(float)
-            row += 1;
+            // + 4 -> 4 * 32 = 128 -> next rgba
+            row += 4;
 
         }
 
