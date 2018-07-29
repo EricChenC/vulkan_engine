@@ -430,7 +430,9 @@ namespace ve {
     void VEngine::createRenderPass() {
         std::array<VkAttachmentDescription, 6> attachments{};
 
-        attachments[0].format = VK_FORMAT_R16G16B16A16_SFLOAT;
+        depthColorForamt = swapChainImageFormat;
+
+        attachments[0].format = depthColorForamt;
         attachments[0].samples = VK_SAMPLE_COUNT_4_BIT;
         attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -439,7 +441,7 @@ namespace ve {
         attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-        attachments[1].format = VK_FORMAT_R16G16B16A16_SFLOAT;
+        attachments[1].format = depthColorForamt;
         attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
         attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -790,7 +792,7 @@ namespace ve {
         createImage(
             swapChainExtent.width,
             swapChainExtent.height,
-            VK_FORMAT_R16G16B16A16_SFLOAT,
+            depthColorForamt,
             VK_IMAGE_TILING_OPTIMAL,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -799,13 +801,13 @@ namespace ve {
             VK_SAMPLE_COUNT_4_BIT
             );
 
-        depthColorImageView = createImageView(depthColorImage, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
+        depthColorImageView = createImageView(depthColorImage, depthColorForamt, VK_IMAGE_ASPECT_COLOR_BIT);
 
 
         createImage(
             swapChainExtent.width,
             swapChainExtent.height,
-            VK_FORMAT_R16G16B16A16_SFLOAT,
+            depthColorForamt,
             VK_IMAGE_TILING_OPTIMAL,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -813,7 +815,7 @@ namespace ve {
             depthColorResolveImageMemory
             );
 
-        depthColorResolveImageView = createImageView(depthColorResolveImage, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
+        depthColorResolveImageView = createImageView(depthColorResolveImage, depthColorForamt, VK_IMAGE_ASPECT_COLOR_BIT);
 
 
         for (size_t i = 0; i < swapChainImageViews.size(); i++) {
@@ -1748,7 +1750,7 @@ namespace ve {
 
         //file.close();
 
-        std::cout << "Color texture saved to disk" << std::endl;
+        std::cout << "Color texture saved to disk \n\n" ;
 
         // Clean up resources
         vkUnmapMemory(device, dstImageMemory);
@@ -1759,103 +1761,49 @@ namespace ve {
 
     void VEngine::SaveOutputDepthTexture(const std::string& path)
     {
-        /*VkImage resolveImage;
-        VkDeviceMemory resolveImageMemory;
+
+        VkImage depthSaveColorImage;
+        VkDeviceMemory depthSaveColorImageMemory;
 
         createImage(
             WIDTH,
             HEIGHT,
-            depthFormat,
-            VK_IMAGE_TILING_OPTIMAL,
-            VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            resolveImage,
-            resolveImageMemory);
-
-        VkImageResolve imageResolve = {};
-
-        imageResolve.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        imageResolve.srcSubresource.layerCount = 1;
-        imageResolve.srcSubresource.mipLevel = 1;
-
-        imageResolve.srcOffset.x = WIDTH;
-        imageResolve.srcOffset.y = HEIGHT;
-
-        imageResolve.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        imageResolve.dstSubresource.layerCount = 1;
-        imageResolve.dstSubresource.mipLevel = 1;
-
-        imageResolve.dstOffset.x = WIDTH;
-        imageResolve.dstOffset.y = HEIGHT;
-
-        imageResolve.extent.depth = 1;
-        imageResolve.extent.width = WIDTH;
-        imageResolve.extent.height = HEIGHT;
-
-
-
-        VkCommandBuffer resolveCmd = beginSingleTimeCommands();
-
-        vkCmdResolveImage(
-            resolveCmd,
-            multisampleTarget.depth.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-            resolveImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            1,
-            &imageResolve
-            );
-
-        endSingleTimeCommands(resolveCmd);*/
-
-
-
-
-        VkDeviceSize size = WIDTH * HEIGHT * 8;
-        VkBuffer dstBuffer;
-        VkDeviceMemory dstMemory;
-
-        createBuffer(
-            size,
+            depthColorForamt,
+            VK_IMAGE_TILING_LINEAR,
             VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            dstBuffer,
-            dstMemory);
+            depthSaveColorImage,
+            depthSaveColorImageMemory
+        );
 
         VkCommandBuffer copyCmd = beginSingleTimeCommands();
 
-        VkBufferImageCopy region = {};
-        region.bufferOffset = 0;
-        region.bufferImageHeight = 0;
-        region.bufferRowLength = 0;
-        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        region.imageSubresource.mipLevel = 0;
-        region.imageSubresource.baseArrayLayer = 0;
-        region.imageSubresource.layerCount = 1;
-        region.imageOffset = VkOffset3D{ 0, 0, 0 };
-        region.imageExtent = VkExtent3D{ swapChainExtent.width, swapChainExtent.height, 1 };
 
+        // Otherwise use image copy (requires us to manually flip components)
+        VkImageCopy imageCopyRegion{};
+        imageCopyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        imageCopyRegion.srcSubresource.layerCount = 1;
+        imageCopyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        imageCopyRegion.dstSubresource.layerCount = 1;
+        imageCopyRegion.extent.width = WIDTH;
+        imageCopyRegion.extent.height = HEIGHT;
+        imageCopyRegion.extent.depth = 1;
 
-       /* vkCmdCopyImageToBuffer(
-            copyCmd,
-            resolveImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-            dstBuffer,
-            1,
-            &region
-        );*/
-
-        vkCmdCopyImageToBuffer(
+        // Issue the copy command
+        vkCmdCopyImage(
             copyCmd,
             depthColorResolveImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-            dstBuffer,
+            depthSaveColorImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             1,
-            &region
-        );
+            &imageCopyRegion);
+
 
         endSingleTimeCommands(copyCmd);
 
 
         // Map image memory so we can start copying from it
         void *data;
-        vkMapMemory(device, dstMemory, 0, size, 0, &data);
+        vkMapMemory(device, depthSaveColorImageMemory, 0, VK_WHOLE_SIZE, 0, &data);
 
         //stbi_write_png(path.data(), WIDTH, HEIGHT, 4, data, WIDTH * 4);
 
@@ -1864,26 +1812,15 @@ namespace ve {
         // ppm header
         file << "P6\n" << WIDTH << "\n" << HEIGHT << "\n" << 255 << "\n";
 
-        auto *row = (float*)data;
+        auto *row = (long double*)data;
 
         auto size_v = WIDTH * HEIGHT;
 
         for (uint32_t y = 0; y < size_v; y++) {
 
-            auto grey = *row + 3;
-
-            file.write((char*)(&grey), 1);
-            file.write((char*)(&grey), 1);
-            file.write((char*)(&grey), 1);
-
-            /*glm::vec3 color = ColorWheel(*row);
-            uint8_t r = MapColor(color.r);
-            uint8_t g = MapColor(color.g);
-            uint8_t b = MapColor(color.b);
-
-            file.write((char*)(&r), 1);
-            file.write((char*)(&g), 1);
-            file.write((char*)(&b), 1);*/
+            file.write((char*)row + 3, 1);
+            file.write((char*)row + 3, 1);
+            file.write((char*)row + 3, 1);
 
             row++;
 
@@ -1891,12 +1828,12 @@ namespace ve {
 
         file.close();
 
-        std::cout << "Depth texture saved to disk" << std::endl;
+        std::cout << "Depth texture saved to disk \n\n";
 
         // Clean up resources
-        vkUnmapMemory(device, dstMemory);
-        vkFreeMemory(device, dstMemory, nullptr);
-        vkDestroyBuffer(device, dstBuffer, nullptr);
+        vkUnmapMemory(device, depthSaveColorImageMemory);
+        vkFreeMemory(device, depthSaveColorImageMemory, nullptr);
+        vkDestroyImage(device, depthSaveColorImage, nullptr);
 
     }
 

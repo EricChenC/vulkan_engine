@@ -200,6 +200,7 @@ namespace ve {
         VkSurfaceKHR surface;
 
         VkFormat depthFormat;
+        VkFormat depthColorForamt;
 
         VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
         VkDevice device;
