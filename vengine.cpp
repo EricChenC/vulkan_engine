@@ -1620,45 +1620,45 @@ namespace ve {
         stbi_write_png(path.data(), WIDTH, HEIGHT, 4, data, WIDTH * 4);
 
 
-        //std::ofstream file(path, std::ios::out | std::ios::binary);
+        std::ofstream file(path, std::ios::out | std::ios::binary);
 
-        //// ppm header
-        //file << "P6\n" << WIDTH << "\n" << HEIGHT << "\n" << 255 << "\n";
+        // ppm header
+        file << "P6\n" << WIDTH << "\n" << HEIGHT << "\n" << 255 << "\n";
 
-        //// If source is BGR (destination is always RGB) and we can't use blit (which does automatic conversion), we'll have to manually swizzle color components
-        //bool colorSwizzle = false;
-        //// Check if source is BGR 
-        //// Note: Not complete, only contains most common and basic BGR surface formats for demonstation purposes
-        //if (!supportsBlit)
-        //{
-        //    std::vector<VkFormat> formatsBGR = { VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_B8G8R8A8_SNORM };
-        //    colorSwizzle = (std::find(formatsBGR.begin(), formatsBGR.end(), swapChainImageFormat) != formatsBGR.end());
-        //}
+        // If source is BGR (destination is always RGB) and we can't use blit (which does automatic conversion), we'll have to manually swizzle color components
+        bool colorSwizzle = false;
+        // Check if source is BGR 
+        // Note: Not complete, only contains most common and basic BGR surface formats for demonstation purposes
+        if (!supportsBlit)
+        {
+            std::vector<VkFormat> formatsBGR = { VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_B8G8R8A8_SNORM };
+            colorSwizzle = (std::find(formatsBGR.begin(), formatsBGR.end(), swapChainImageFormat) != formatsBGR.end());
+        }
 
-        //auto image_size = HEIGHT * WIDTH;
+        auto image_size = HEIGHT * WIDTH;
 
 
-        //for (uint32_t y = 0; y < HEIGHT; y++)
-        //{
-        //    unsigned int *row = (unsigned int*)data;
-        //    for (uint32_t x = 0; x < WIDTH; x++)
-        //    {
-        //        if (colorSwizzle)
-        //        {
-        //            file.write((char*)row + 2, 1);
-        //            file.write((char*)row + 1, 1);
-        //            file.write((char*)row, 1);
-        //        }
-        //        else
-        //        {
-        //            file.write((char*)row, 3);
-        //        }
-        //        row++;
-        //    }
-        //    data += subResourceLayout.rowPitch;
-        //}
+        for (uint32_t y = 0; y < HEIGHT; y++)
+        {
+            unsigned int *row = (unsigned int*)data;
+            for (uint32_t x = 0; x < WIDTH; x++)
+            {
+                if (colorSwizzle)
+                {
+                    file.write((char*)row + 2, 1);
+                    file.write((char*)row + 1, 1);
+                    file.write((char*)row, 1);
+                }
+                else
+                {
+                    file.write((char*)row, 3);
+                }
+                row++;
+            }
+            data += subResourceLayout.rowPitch;
+        }
 
-        //file.close();
+        file.close();
 
         std::cout << "Color texture saved to disk" << std::endl;
 
@@ -1672,12 +1672,14 @@ namespace ve {
     void VEngine::SaveOutputDepthTexture(const std::string& path)
     {
 
-        VkDeviceSize size = WIDTH * HEIGHT * 4;
+        // VK_FORMAT_D32_SFLOAT_S8_UINT
+        // 4 byte depth, 1 byte stencil
+        VkDeviceSize size = WIDTH * HEIGHT * 4 * 4;
         VkBuffer dstBuffer;
         VkDeviceMemory dstMemory;
 
         createBuffer(
-            size,
+            size,  // buffer byte number
             VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
             dstBuffer,
@@ -1690,7 +1692,7 @@ namespace ve {
         region.bufferOffset = 0;
         region.bufferImageHeight = 0;
         region.bufferRowLength = 0;
-        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         region.imageSubresource.mipLevel = 0;
         region.imageSubresource.baseArrayLayer = 0;
         region.imageSubresource.layerCount = 1;
@@ -1700,7 +1702,7 @@ namespace ve {
 
         vkCmdCopyImageToBuffer(
             copyCmd,
-            depthImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            swapChainImages[imageIndex], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
             dstBuffer,
             1,
             &region
@@ -1720,38 +1722,45 @@ namespace ve {
         // ppm header
         file << "P6\n" << WIDTH << "\n" << HEIGHT << "\n" << 255 << "\n";
 
-        auto *row = (float*)data;
+        //auto *row = (unsigned int**)data;
 
         auto size_v = WIDTH * HEIGHT;
 
-        int ca[2] = { 10, 5 };
-        float ba[2] = { 8.0, 4.0 };
+        auto kk =  (unsigned int*)data;
 
-        auto kk = ca;
-        auto uo = ba;
+        for (uint32_t y = 0; y < size_v; y++)
+        {
+            file.write((char*)kk, 3);
 
-
-
-        for (uint32_t y = 0; y < size_v; y++) {
-
-            uint8_t grey = MapColor(*row);
-
-            file.write((char*)(&grey), 1);
-            file.write((char*)(&grey), 1);
-            file.write((char*)(&grey), 1);
-
-            /*glm::vec3 color = ColorWheel(*row);
-            uint8_t r = MapColor(color.r);
-            uint8_t g = MapColor(color.g);
-            uint8_t b = MapColor(color.b);
-
-            file.write((char*)(&r), 1);
-            file.write((char*)(&g), 1);
-            file.write((char*)(&b), 1);*/
-
-            row++;
-
+            kk++;
         }
+
+
+        //for (uint32_t y = 0; y < size_v; y++) {
+
+        //    file.write((char*)row + 2, 1);
+        //    file.write((char*)row + 1, 1);
+        //    file.write((char*)row, 1);
+
+
+        //    /*uint8_t grey = MapColor(*row);
+
+        //    file.write((char*)(&grey), 1);
+        //    file.write((char*)(&grey), 1);
+        //    file.write((char*)(&grey), 1);*/
+
+        //    /*glm::vec3 color = ColorWheel(*row);
+        //    uint8_t r = MapColor(color.r);
+        //    uint8_t g = MapColor(color.g);
+        //    uint8_t b = MapColor(color.b);
+
+        //    file.write((char*)(&r), 1);
+        //    file.write((char*)(&g), 1);
+        //    file.write((char*)(&b), 1);*/
+
+        //    row++;
+
+        //}
 
         file.close();
 
@@ -1770,7 +1779,7 @@ namespace ve {
     }
 
     glm::vec3 VEngine::ColorWheel(float normalizeHue) {
-        float v = normalizeHue * 6.0f;
+        double v = normalizeHue * 6.0f;
         if (v < 0.f) {
             return glm::vec3(1.f, 0.f, 0.f);
         }
