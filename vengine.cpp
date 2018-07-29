@@ -1620,45 +1620,45 @@ namespace ve {
         stbi_write_png(path.data(), WIDTH, HEIGHT, 4, data, WIDTH * 4);
 
 
-        std::ofstream file(path, std::ios::out | std::ios::binary);
+        //std::ofstream file(path, std::ios::out | std::ios::binary);
 
-        // ppm header
-        file << "P6\n" << WIDTH << "\n" << HEIGHT << "\n" << 255 << "\n";
+        //// ppm header
+        //file << "P6\n" << WIDTH << "\n" << HEIGHT << "\n" << 255 << "\n";
 
-        // If source is BGR (destination is always RGB) and we can't use blit (which does automatic conversion), we'll have to manually swizzle color components
-        bool colorSwizzle = false;
-        // Check if source is BGR 
-        // Note: Not complete, only contains most common and basic BGR surface formats for demonstation purposes
-        if (!supportsBlit)
-        {
-            std::vector<VkFormat> formatsBGR = { VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_B8G8R8A8_SNORM };
-            colorSwizzle = (std::find(formatsBGR.begin(), formatsBGR.end(), swapChainImageFormat) != formatsBGR.end());
-        }
+        //// If source is BGR (destination is always RGB) and we can't use blit (which does automatic conversion), we'll have to manually swizzle color components
+        //bool colorSwizzle = false;
+        //// Check if source is BGR 
+        //// Note: Not complete, only contains most common and basic BGR surface formats for demonstation purposes
+        //if (!supportsBlit)
+        //{
+        //    std::vector<VkFormat> formatsBGR = { VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_B8G8R8A8_SNORM };
+        //    colorSwizzle = (std::find(formatsBGR.begin(), formatsBGR.end(), swapChainImageFormat) != formatsBGR.end());
+        //}
 
-        auto image_size = HEIGHT * WIDTH;
+        //auto image_size = HEIGHT * WIDTH;
 
 
-        for (uint32_t y = 0; y < HEIGHT; y++)
-        {
-            unsigned int *row = (unsigned int*)data;
-            for (uint32_t x = 0; x < WIDTH; x++)
-            {
-                if (colorSwizzle)
-                {
-                    file.write((char*)row + 2, 1);
-                    file.write((char*)row + 1, 1);
-                    file.write((char*)row, 1);
-                }
-                else
-                {
-                    file.write((char*)row, 3);
-                }
-                row++;
-            }
-            data += subResourceLayout.rowPitch;
-        }
+        //for (uint32_t y = 0; y < HEIGHT; y++)
+        //{
+        //    unsigned int *row = (unsigned int*)data;
+        //    for (uint32_t x = 0; x < WIDTH; x++)
+        //    {
+        //        if (colorSwizzle)
+        //        {
+        //            file.write((char*)row + 2, 1);
+        //            file.write((char*)row + 1, 1);
+        //            file.write((char*)row, 1);
+        //        }
+        //        else
+        //        {
+        //            file.write((char*)row, 3);
+        //        }
+        //        row++;
+        //    }
+        //    data += subResourceLayout.rowPitch;
+        //}
 
-        file.close();
+        //file.close();
 
         std::cout << "Color texture saved to disk" << std::endl;
 
@@ -1674,7 +1674,7 @@ namespace ve {
 
         // VK_FORMAT_D32_SFLOAT_S8_UINT
         // 4 byte depth, 1 byte stencil
-        VkDeviceSize size = WIDTH * HEIGHT * 4 * 4;
+        VkDeviceSize size = WIDTH * HEIGHT * 5;
         VkBuffer dstBuffer;
         VkDeviceMemory dstMemory;
 
@@ -1692,7 +1692,7 @@ namespace ve {
         region.bufferOffset = 0;
         region.bufferImageHeight = 0;
         region.bufferRowLength = 0;
-        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
         region.imageSubresource.mipLevel = 0;
         region.imageSubresource.baseArrayLayer = 0;
         region.imageSubresource.layerCount = 1;
@@ -1702,7 +1702,7 @@ namespace ve {
 
         vkCmdCopyImageToBuffer(
             copyCmd,
-            swapChainImages[imageIndex], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            depthImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
             dstBuffer,
             1,
             &region
@@ -1726,13 +1726,17 @@ namespace ve {
 
         auto size_v = WIDTH * HEIGHT;
 
-        auto kk =  (unsigned int*)data;
+        auto row =  (float*)data;
 
         for (uint32_t y = 0; y < size_v; y++)
         {
-            file.write((char*)kk, 3);
+            uint8_t grey = MapColor(*row);
 
-            kk++;
+            file.write((char*)(&grey), 1);
+            file.write((char*)(&grey), 1);
+            file.write((char*)(&grey), 1);
+
+            row++;
         }
 
 
