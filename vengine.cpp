@@ -430,7 +430,7 @@ namespace ve {
     void VEngine::createRenderPass() {
         std::array<VkAttachmentDescription, 6> attachments{};
 
-        depthColorForamt = VK_FORMAT_R32G32B32A32_SFLOAT;
+        depthColorForamt = VK_FORMAT_R8G8B8A8_UNORM;
 
         attachments[0].format = depthColorForamt;
         attachments[0].samples = VK_SAMPLE_COUNT_4_BIT;
@@ -1762,18 +1762,6 @@ namespace ve {
     void VEngine::SaveOutputDepthTexture(const std::string& path)
     {
 
-        
-
-
-
-
-
-
-
-
-
-
-
         VkImage depthSaveColorImage;
         VkDeviceMemory depthSaveColorImageMemory;
 
@@ -1830,16 +1818,12 @@ namespace ve {
 
         for (uint32_t y = 0; y < size_v; y++) {
 
-            uint32_t r = MapColor(*row + 3);
-            uint32_t g = MapColor(*row + 3);
-            uint32_t b = MapColor(*row + 3);
-
-            file.write((char*)(&r), 1);
-            file.write((char*)(&g), 1);
-            file.write((char*)(&b) , 1);
+            file.write((char*)row + 3, 1);
+            file.write((char*)row + 3, 1);
+            file.write((char*)row + 3, 1);
 
             // + 1 ->  + 32 byte(float)
-            row += 4;
+            row += 1;
 
         }
 
