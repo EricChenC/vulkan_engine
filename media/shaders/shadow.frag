@@ -6,13 +6,18 @@ layout(location = 0) in vec4 viewNormal;
 layout(location = 1) in vec4 viewLightDir;
 layout(location = 2) in vec4 viewPos;
 layout(location = 3) in vec4 worldNormal;
+layout(location = 4) in vec3 inWorldPos;
 
 
-layout(location = 0) out vec4 outColor;
-layout(location = 1) out vec4 outColor1;
+layout(location = 0) out vec4 outPosition;
+layout(location = 1) out vec4 outColor;
 
 
 #define pie 3.1415926
+
+const float NEAR_PLANE = 0.1f;
+const float FAR_PLANE = 1000.0f;
+
 
 // main routine
 void main()
@@ -48,6 +53,8 @@ void main()
     
     outColor = vec4(color, 1.0);
 
-	outColor1 = vec4(color.g, color.r, color.b, 1.0);
-    
+	outPosition = vec4(inWorldPos, 1.0);
+
+	outPosition.a = gl_FragCoord.z;    
+
  }

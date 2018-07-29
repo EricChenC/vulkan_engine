@@ -20,6 +20,7 @@ layout(location = 0) out vec4 viewNormal;
 layout(location = 1) out vec4 viewLightDir;
 layout(location = 2) out vec4 viewPos;
 layout(location = 3) out vec4 worldNormal;
+layout(location = 4) out vec3 outWorldPos;
 
 
 out gl_PerVertex {
@@ -38,5 +39,8 @@ void main()
     viewLightDir =  ubo.view * vec4(ubo.lightPos, 0.0);
     
     viewPos = vec4(0.0, 0.0, 0.0, 0.0) - (ubo.view * mt.model * vec4(inPosition, 1.0));
+
+	// Vertex position in world space
+	outWorldPos = vec3(mt.model * vec4(inPosition, 1.0));
     
 }

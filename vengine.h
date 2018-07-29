@@ -165,7 +165,7 @@ namespace ve {
         VkBool32 findDepthFormat(VkPhysicalDevice physicalDevice, VkFormat *depthFormat);
         bool hasStencilComponent(VkFormat format);
         VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
-        void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+        void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, VkSampleCountFlagBits count = VK_SAMPLE_COUNT_1_BIT);
 		void createTestImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 
         void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
@@ -223,6 +223,14 @@ namespace ve {
 		VkImage depthImage;
 		VkDeviceMemory depthImageMemory;
 		VkImageView depthImageView;
+
+        VkImage depthColorImage;
+        VkDeviceMemory depthColorImageMemory;
+        VkImageView depthColorImageView;
+
+        VkImage depthColorResolveImage;
+        VkDeviceMemory depthColorResolveImageMemory;
+        VkImageView depthColorResolveImageView;
 
         std::vector<Vertex> vertices;
         std::vector<uint32_t> indices;

@@ -428,8 +428,9 @@ namespace ve {
     }
 
     void VEngine::createRenderPass() {
-        std::array<VkAttachmentDescription, 4> attachments{};
-        attachments[0].format = swapChainImageFormat;
+        std::array<VkAttachmentDescription, 6> attachments{};
+
+        attachments[0].format = VK_FORMAT_R16G16B16A16_SFLOAT;
         attachments[0].samples = VK_SAMPLE_COUNT_4_BIT;
         attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -438,46 +439,66 @@ namespace ve {
         attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-        attachments[1].format = swapChainImageFormat;
+        attachments[1].format = VK_FORMAT_R16G16B16A16_SFLOAT;
         attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
         attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        attachments[1].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        attachments[1].finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 
-        attachments[2].format = depthFormat;
+        attachments[2].format = swapChainImageFormat;
         attachments[2].samples = VK_SAMPLE_COUNT_4_BIT;
         attachments[2].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachments[2].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         attachments[2].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         attachments[2].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         attachments[2].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        attachments[2].finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        attachments[2].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-        attachments[3].format = depthFormat;
+        attachments[3].format = swapChainImageFormat;
         attachments[3].samples = VK_SAMPLE_COUNT_1_BIT;
         attachments[3].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachments[3].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         attachments[3].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         attachments[3].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         attachments[3].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        attachments[3].finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        attachments[3].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-        VkAttachmentReference colorAttachmentRef[1] = {};
+        attachments[4].format = depthFormat;
+        attachments[4].samples = VK_SAMPLE_COUNT_4_BIT;
+        attachments[4].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachments[4].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachments[4].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachments[4].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachments[4].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachments[4].finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+
+        attachments[5].format = depthFormat;
+        attachments[5].samples = VK_SAMPLE_COUNT_1_BIT;
+        attachments[5].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachments[5].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachments[5].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachments[5].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachments[5].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachments[5].finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+
+        VkAttachmentReference colorAttachmentRef[2] = {};
         colorAttachmentRef[0] = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+        colorAttachmentRef[1] = { 2, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
 
         VkAttachmentReference depthAttachmentRef[1] = {};
-        depthAttachmentRef[0] = { 2, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
+        depthAttachmentRef[0] = { 4, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
 
-        VkAttachmentReference resolveAttachmentRef[1] = {};
+        VkAttachmentReference resolveAttachmentRef[2] = {};
         resolveAttachmentRef[0] = { 1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+        resolveAttachmentRef[1] = { 3, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
 
 
         VkSubpassDescription subpass = {};
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass.colorAttachmentCount = 1;
+        subpass.colorAttachmentCount = 2;
         subpass.pColorAttachments = colorAttachmentRef;
         subpass.pDepthStencilAttachment = depthAttachmentRef;
         subpass.pResolveAttachments = resolveAttachmentRef;
@@ -682,7 +703,7 @@ namespace ve {
         depthStencil.depthBoundsTestEnable = VK_FALSE;
         depthStencil.stencilTestEnable = VK_FALSE;
 
-        std::array<VkPipelineColorBlendAttachmentState, 1> colorBlendAttachment = {};
+        std::array<VkPipelineColorBlendAttachmentState, 2> colorBlendAttachment = {};
         colorBlendAttachment[0].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
         colorBlendAttachment[0].blendEnable = VK_FALSE;
         /*colorBlendAttachment[0].colorBlendOp = VK_BLEND_OP_ADD;
@@ -692,11 +713,15 @@ namespace ve {
         colorBlendAttachment[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
         colorBlendAttachment[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;*/
 
+        colorBlendAttachment[1].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+        colorBlendAttachment[1].blendEnable = VK_FALSE;
+
+
         VkPipelineColorBlendStateCreateInfo colorBlending = {};
         colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
         colorBlending.logicOpEnable = VK_FALSE;
         colorBlending.logicOp = VK_LOGIC_OP_COPY;
-        colorBlending.attachmentCount = 1;
+        colorBlending.attachmentCount = colorBlendAttachment.size();
         colorBlending.pAttachments = colorBlendAttachment.data();
         colorBlending.blendConstants[0] = 0.0f;
         colorBlending.blendConstants[1] = 0.0f;
@@ -761,8 +786,40 @@ namespace ve {
 
         depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
+
+        createImage(
+            swapChainExtent.width,
+            swapChainExtent.height,
+            VK_FORMAT_R16G16B16A16_SFLOAT,
+            VK_IMAGE_TILING_OPTIMAL,
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            depthColorImage,
+            depthColorImageMemory,
+            VK_SAMPLE_COUNT_4_BIT
+            );
+
+        depthColorImageView = createImageView(depthColorImage, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
+
+
+        createImage(
+            swapChainExtent.width,
+            swapChainExtent.height,
+            VK_FORMAT_R16G16B16A16_SFLOAT,
+            VK_IMAGE_TILING_OPTIMAL,
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            depthColorResolveImage,
+            depthColorResolveImageMemory
+            );
+
+        depthColorResolveImageView = createImageView(depthColorResolveImage, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
+
+
         for (size_t i = 0; i < swapChainImageViews.size(); i++) {
-            std::array<VkImageView, 4> attachments = {
+            std::array<VkImageView, 6> attachments = {
+                depthColorImageView,
+                depthColorResolveImageView,
                 multisampleTarget.color.view,
                 swapChainImageViews[i],
                 multisampleTarget.depth.view,
@@ -813,11 +870,13 @@ namespace ve {
             renderPassInfo.renderArea.offset = { 0, 0 };
             renderPassInfo.renderArea.extent = swapChainExtent;
 
-            std::array<VkClearValue, 4> clearValues = {};
-            clearValues[0].color = { 0.2f, 0.2f, 0.2f, 1.0f };
-            clearValues[1].color = { 0.2f, 0.2f, 0.2f, 1.0f };
-            clearValues[2].depthStencil = { 1.0f, 0 };
-            clearValues[3].depthStencil = { 1.0f, 0 };
+            std::array<VkClearValue, 6> clearValues = {};
+            clearValues[0].color = { 0.0f, 0.0f, 0.0f, 0.0f };
+            clearValues[1].color = { 0.0f, 0.0f, 0.0f, 0.0f };
+            clearValues[2].color = { 0.0f, 0.0f, 0.0f, 0.0f };
+            clearValues[3].color = { 0.0f, 0.0f, 0.0f, 0.0f };
+            clearValues[4].depthStencil = { 1.0f, 0 };
+            clearValues[5].depthStencil = { 1.0f, 0 };
 
             renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
             renderPassInfo.pClearValues = clearValues.data();
@@ -910,7 +969,7 @@ namespace ve {
         return imageView;
     }
 
-    void VEngine::createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
+    void VEngine::createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, VkSampleCountFlagBits count) {
         VkImageCreateInfo imageInfo = {};
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -923,7 +982,7 @@ namespace ve {
         imageInfo.tiling = tiling;
         imageInfo.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
         imageInfo.usage = usage;
-        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        imageInfo.samples = count;
         imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
         if (vkCreateImage(device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
@@ -1750,7 +1809,7 @@ namespace ve {
 
 
 
-        VkDeviceSize size = WIDTH * HEIGHT * 4;
+        VkDeviceSize size = WIDTH * HEIGHT * 8;
         VkBuffer dstBuffer;
         VkDeviceMemory dstMemory;
 
@@ -1763,12 +1822,11 @@ namespace ve {
 
         VkCommandBuffer copyCmd = beginSingleTimeCommands();
 
-        // depth format -> VK_FORMAT_D32_SFLOAT_S8_UINT
         VkBufferImageCopy region = {};
         region.bufferOffset = 0;
         region.bufferImageHeight = 0;
         region.bufferRowLength = 0;
-        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         region.imageSubresource.mipLevel = 0;
         region.imageSubresource.baseArrayLayer = 0;
         region.imageSubresource.layerCount = 1;
@@ -1784,13 +1842,13 @@ namespace ve {
             &region
         );*/
 
-        /*vkCmdCopyImageToBuffer(
+        vkCmdCopyImageToBuffer(
             copyCmd,
-            depthImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            depthColorResolveImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
             dstBuffer,
             1,
             &region
-        );*/
+        );
 
         endSingleTimeCommands(copyCmd);
 
@@ -1812,7 +1870,7 @@ namespace ve {
 
         for (uint32_t y = 0; y < size_v; y++) {
 
-            uint8_t grey = MapColor(*row);
+            auto grey = *row + 3;
 
             file.write((char*)(&grey), 1);
             file.write((char*)(&grey), 1);
