@@ -430,7 +430,7 @@ namespace ve {
     void VEngine::createRenderPass() {
         std::array<VkAttachmentDescription, 6> attachments{};
 
-        depthColorForamt = swapChainImageFormat;
+        depthColorForamt = VK_FORMAT_R32G32B32A32_SFLOAT;
 
         attachments[0].format = depthColorForamt;
         attachments[0].samples = VK_SAMPLE_COUNT_4_BIT;
@@ -873,10 +873,10 @@ namespace ve {
             renderPassInfo.renderArea.extent = swapChainExtent;
 
             std::array<VkClearValue, 6> clearValues = {};
-            clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
-            clearValues[1].color = { 0.0f, 0.0f, 0.0f, 1.0f };
-            clearValues[2].color = { 0.0f, 0.0f, 0.0f, 1.0f };
-            clearValues[3].color = { 0.0f, 0.0f, 0.0f, 1.0f };
+            clearValues[0].color = { 0.2f, 0.2f, 0.2f, 1.0f };
+            clearValues[1].color = { 0.2f, 0.2f, 0.2f, 1.0f };
+            clearValues[2].color = { 0.2f, 0.2f, 0.2f, 1.0f };
+            clearValues[3].color = { 0.2f, 0.2f, 0.2f, 1.0f };
             clearValues[4].depthStencil = { 1.0f, 0 };
             clearValues[5].depthStencil = { 1.0f, 0 };
 
@@ -1762,6 +1762,18 @@ namespace ve {
     void VEngine::SaveOutputDepthTexture(const std::string& path)
     {
 
+        
+
+
+
+
+
+
+
+
+
+
+
         VkImage depthSaveColorImage;
         VkDeviceMemory depthSaveColorImageMemory;
 
@@ -1812,17 +1824,22 @@ namespace ve {
         // ppm header
         file << "P6\n" << WIDTH << "\n" << HEIGHT << "\n" << 255 << "\n";
 
-        auto *row = (long double*)data;
+        auto *row = (float*)data;
 
         auto size_v = WIDTH * HEIGHT;
 
         for (uint32_t y = 0; y < size_v; y++) {
 
-            file.write((char*)row + 3, 1);
-            file.write((char*)row + 3, 1);
-            file.write((char*)row + 3, 1);
+            uint32_t r = MapColor(*row + 3);
+            uint32_t g = MapColor(*row + 3);
+            uint32_t b = MapColor(*row + 3);
 
-            row++;
+            file.write((char*)(&r), 1);
+            file.write((char*)(&g), 1);
+            file.write((char*)(&b) , 1);
+
+            // + 1 ->  + 32 byte(float)
+            row += 4;
 
         }
 
