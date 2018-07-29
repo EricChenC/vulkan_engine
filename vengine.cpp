@@ -871,10 +871,10 @@ namespace ve {
             renderPassInfo.renderArea.extent = swapChainExtent;
 
             std::array<VkClearValue, 6> clearValues = {};
-            clearValues[0].color = { 0.0f, 0.0f, 0.0f, 0.0f };
-            clearValues[1].color = { 0.0f, 0.0f, 0.0f, 0.0f };
-            clearValues[2].color = { 0.0f, 0.0f, 0.0f, 0.0f };
-            clearValues[3].color = { 0.0f, 0.0f, 0.0f, 0.0f };
+            clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
+            clearValues[1].color = { 0.0f, 0.0f, 0.0f, 1.0f };
+            clearValues[2].color = { 0.0f, 0.0f, 0.0f, 1.0f };
+            clearValues[3].color = { 0.0f, 0.0f, 0.0f, 1.0f };
             clearValues[4].depthStencil = { 1.0f, 0 };
             clearValues[5].depthStencil = { 1.0f, 0 };
 
@@ -1366,7 +1366,7 @@ namespace ve {
             auto color_file_name = "D:/project/vulkan_engine/build/color.png";
             auto depth_file_name = "D:/project/vulkan_engine/build/depth.ppm";
 
-            //SaveOutputColorTexture(color_file_name);
+            SaveOutputColorTexture(color_file_name);
             SaveOutputDepthTexture(depth_file_name);
         }
 
